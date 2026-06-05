@@ -1,0 +1,113 @@
+# 知识卡导出索引文件
+schema_version: 1
+locale: zh-CN
+branch: Q0DeR-MaG1C-BrAnCh-Fo2-NoN-GiT-Or-No-C0MmIt
+exported_at: "2026-06-05T08:45:47Z"
+modules:
+    "":
+        dir_name: 个人工作计划管理平台
+        title: 个人工作计划管理平台
+        scope:
+            - docker-compose.yml
+            - .vscode\settings.json
+            - backend\Dockerfile
+            - backend\cp.txt
+            - backend\err.log
+            - backend\err.txt
+            - backend\pom.xml
+            - backend\sql\init.sql
+            - backend\src\main\java\com\newworld\NewWorldApplication.java
+            - backend\src\main\java\com\newworld\common\JwtUtil.java
+            - backend\src\main\java\com\newworld\common\PageResult.java
+            - backend\src\main\java\com\newworld\common\Result.java
+            - backend\src\main\java\com\newworld\common\exception\BusinessException.java
+            - backend\src\main\java\com\newworld\common\exception\GlobalExceptionHandler.java
+            - backend\src\main\java\com\newworld\config\AuthInterceptor.java
+            - backend\src\main\java\com\newworld\config\Knife4jConfig.java
+            - backend\src\main\java\com\newworld\config\MyBatisPlusConfig.java
+            - backend\src\main\java\com\newworld\config\MyMetaObjectHandler.java
+            - backend\src\main\java\com\newworld\config\WebMvcConfig.java
+            - backend\src\main\java\com\newworld\controller\AuthController.java
+            - backend\src\main\java\com\newworld\controller\ExportController.java
+            - backend\src\main\java\com\newworld\controller\GroupController.java
+            - backend\src\main\java\com\newworld\controller\ProjectController.java
+            - backend\src\main\java\com\newworld\controller\TagController.java
+            - backend\src\main\java\com\newworld\controller\TaskController.java
+            - backend\src\main\java\com\newworld\dto\LoginRequest.java
+            - backend\src\main\java\com\newworld\dto\TaskQueryDTO.java
+            - backend\src\main\java\com\newworld\dto\TaskStatisticsVO.java
+            - backend\src\main\java\com\newworld\dto\TreeVO.java
+            - backend\src\main\java\com\newworld\entity\Group.java
+            - backend\src\main\java\com\newworld\entity\Project.java
+            - backend\src\main\java\com\newworld\entity\Tag.java
+            - backend\src\main\java\com\newworld\entity\Task.java
+            - backend\src\main\java\com\newworld\entity\User.java
+            - backend\src\main\java\com\newworld\mapper\GroupMapper.java
+            - backend\src\main\java\com\newworld\mapper\ProjectMapper.java
+            - backend\src\main\java\com\newworld\mapper\TagMapper.java
+            - backend\src\main\java\com\newworld\mapper\TaskMapper.java
+            - backend\src\main\java\com\newworld\mapper\UserMapper.java
+            - backend\src\main\java\com\newworld\service\AuthService.java
+            - backend\src\main\java\com\newworld\service\GroupService.java
+            - backend\src\main\java\com\newworld\service\ProjectService.java
+            - backend\src\main\java\com\newworld\service\TagService.java
+            - backend\src\main\java\com\newworld\service\TaskService.java
+            - backend\src\main\java\com\newworld\service\impl\AuthServiceImpl.java
+            - backend\src\main\java\com\newworld\service\impl\GroupServiceImpl.java
+            - backend\src\main\java\com\newworld\service\impl\ProjectServiceImpl.java
+            - backend\src\main\java\com\newworld\service\impl\TagServiceImpl.java
+            - backend\src\main\java\com\newworld\service\impl\TaskServiceImpl.java
+            - backend\src\main\resources\application-prod.yml
+            - backend\src\main\resources\application.yml
+            - deploy\start.bat
+            - deploy\start.sh
+            - frontend\index.html
+            - frontend\package-lock.json
+            - frontend\package.json
+            - frontend\src\App.vue
+            - frontend\src\api\auth.js
+            - frontend\src\api\export.js
+            - frontend\src\api\group.js
+            - frontend\src\api\project.js
+            - frontend\src\api\tag.js
+            - frontend\src\api\task.js
+            - frontend\src\components\task\TaskDetailPanel.vue
+            - frontend\src\layout\Header.vue
+            - frontend\src\layout\MainLayout.vue
+            - frontend\src\layout\Sidebar.vue
+            - frontend\src\main.js
+            - frontend\src\router\index.js
+            - frontend\src\stores\app.js
+            - frontend\src\stores\auth.js
+            - frontend\src\stores\project.js
+            - frontend\src\styles\global.css
+            - frontend\src\utils\request.js
+            - frontend\src\views\CalendarView.vue
+            - frontend\src\views\Login.vue
+            - frontend\src\views\ProjectView.vue
+            - frontend\vite.config.js
+            - nul
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    backend:
+        dir_name: 个人工作计划管理后端服务
+        title: 个人工作计划管理后端服务
+        scope:
+            - backend/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: frontend
+    frontend:
+        dir_name: 项目管理前端应用
+        title: 项目管理前端应用
+        scope:
+            - frontend/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: backend

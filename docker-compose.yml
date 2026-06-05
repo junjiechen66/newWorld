@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  # 后端 API 服务（内部访问，不对外暴露端口）
+  app:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: newworld-app
+    expose:
+      - "8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+
+  # Nginx 反向代理（对外暴露 80 端口，托管前端 + 代理 API）
+  nginx:
+    build:
+      context: .
+      dockerfile: nginx/Dockerfile
+    container_name: newworld-nginx
+    ports:
+      - "80:80"
+    depends_on:
+      - app
+    restart: unless-stopped

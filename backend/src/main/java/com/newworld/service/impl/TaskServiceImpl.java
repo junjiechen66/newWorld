@@ -1,0 +1,193 @@
+package com.newworld.service.impl;
+
+import cn.hutool.core.util.StrUtil;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.newworld.common.exception.BusinessException;
+import com.newworld.dto.TaskQueryDTO;
+import com.newworld.dto.TaskStatisticsVO;
+import com.newworld.entity.Task;
+import com.newworld.mapper.TaskMapper;
+import com.newworld.service.TaskService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.UUID;
+
+@Service
+public class TaskServiceImpl implements TaskService {
+
+    @Autowired
+    private TaskMapper taskMapper;
+
+    @Override
+    public List<Task> queryList(TaskQueryDTO query, Long userId) {
+        LambdaQueryWrapper<Task> wrapper = new LambdaQueryWrapper<Task>()
+                .eq(Task::getUserId, userId)
+                .eq(query.getProjectId() != null, Task::getProjectId, query.getProjectId())
+                .eq(StrUtil.isNotBlank(query.getStatus()), Task::getStatus, query.getStatus())
+                .eq(StrUtil.isNotBlank(query.getPriority()), Task::getPriority, query.getPriority())
+                .eq(StrUtil.isNotBlank(query.getTag()), Task::getTag, query.getTag())
+                .eq(query.getIsNote() != null, Task::getIsNote, query.getIsNote())
+                .ge(query.getStartDateFrom() != null, Task::getStartDate, query.getStartDateFrom())
+                .le(query.getStartDateTo() != null, Task::getStartDate, query.getStartDateTo())
+                .ge(query.getDueDateFrom() != null, Task::getDueDate, query.getDueDateFrom())
+                .le(query.getDueDateTo() != null, Task::getDueDate, query.getDueDateTo())
+                .and(StrUtil.isNotBlank(query.getKeyword()), w -> w
+                        .like(Task::getTitle, query.getKeyword())
+                        .or()
+                        .like(Task::getDescription, query.getKeyword()))
+                .orderByAsc(Task::getSortOrder)
+                .orderByDesc(Task::getCreateTime);
+
+        return taskMapper.selectList(wrapper);
+    }
+
+    @Override
+    public Task getById(Long id) {
+        Task task = taskMapper.selectById(id);
+        if (task == null) {
+            throw new BusinessException("任务不存在");
+        }
+        return task;
+    }
+
+    @Override
+    public Task create(Task task) {
+        if (task.getPriority() == null) {
+            task.setPriority("NONE");
+        }
+        if (task.getStatus() == null) {
+            task.setStatus("TODO");
+        }
+        if (task.getIsNote() == null) {
+            task.setIsNote(false);
+        }
+        taskMapper.insert(task);
+        return task;
+    }
+
+    @Override
+    public Task update(Task task) {
+        Task existing = taskMapper.selectById(task.getId());
+        if (existing == null) {
+            throw new BusinessException("任务不存在");
+        }
+        taskMapper.updateById(task);
+        return taskMapper.selectById(task.getId());
+    }
+
+    @Override
+    public void delete(Long id) {
+        Task existing = taskMapper.selectById(id);
+        if (existing == null) {
+            throw new BusinessException("任务不存在");
+        }
+        taskMapper.deleteById(id);
+    }
+
+    @Override
+    public Task updateStatus(Long id, String status) {
+        Task task = taskMapper.selectById(id);
+        if (task == null) {
+            throw new BusinessException("任务不存在");
+        }
+        task.setStatus(status);
+        taskMapper.updateById(task);
+        return task;
+    }
+
+    @Override
+    public Task updatePriority(Long id, String priority) {
+        Task task = taskMapper.selectById(id);
+        if (task == null) {
+            throw new BusinessException("任务不存在");
+        }
+        task.setPriority(priority);
+        taskMapper.updateById(task);
+        return task;
+    }
+
+    @Override
+    public Task duplicate(Long id) {
+        Task original = taskMapper.selectById(id);
+        if (original == null) {
+            throw new BusinessException("任务不存在");
+        }
+        Task copy = new Task();
+        copy.setUserId(original.getUserId());
+        copy.setProjectId(original.getProjectId());
+        copy.setTitle(original.getTitle() + " (副本)");
+        copy.setDescription(original.getDescription());
+        copy.setPriority(original.getPriority());
+        copy.setStatus("TODO");
+        copy.setTag(original.getTag());
+        copy.setStartDate(original.getStartDate());
+        copy.setDueDate(original.getDueDate());
+        copy.setIsNote(false);
+        taskMapper.insert(copy);
+        return copy;
+    }
+
+    @Override
+    public Task archive(Long id) {
+        Task task = taskMapper.selectById(id);
+        if (task == null) {
+            throw new BusinessException("任务不存在");
+        }
+        task.setStatus("ARCHIVED");
+        taskMapper.updateById(task);
+        return task;
+    }
+
+    @Override
+    public Task convertToNote(Long id) {
+        Task task = taskMapper.selectById(id);
+        if (task == null) {
+            throw new BusinessException("任务不存在");
+        }
+        task.setIsNote(true);
+        taskMapper.updateById(task);
+        return task;
+    }
+
+    @Override
+    public String generateShareLink(Long id) {
+        Task task = taskMapper.selectById(id);
+        if (task == null) {
+            throw new BusinessException("任务不存在");
+        }
+        // 生成一个唯一分享标识
+        String shareId = UUID.randomUUID().toString().replace("-", "").substring(0, 12);
+        // 实际使用时替换为真实域名
+        return "/share/task/" + shareId;
+    }
+
+    @Override
+    public List<Task> search(String keyword, Long userId) {
+        return taskMapper.selectList(
+                new LambdaQueryWrapper<Task>()
+                        .eq(Task::getUserId, userId)
+                        .like(Task::getTitle, keyword)
+                        .orderByDesc(Task::getCreateTime));
+    }
+
+    @Override
+    public TaskStatisticsVO statistics(Long userId) {
+        TaskStatisticsVO vo = new TaskStatisticsVO();
+
+        vo.setTodoCount(taskMapper.selectCount(
+                new LambdaQueryWrapper<Task>().eq(Task::getUserId, userId).eq(Task::getStatus, "TODO")));
+        vo.setInProgressCount(taskMapper.selectCount(
+                new LambdaQueryWrapper<Task>().eq(Task::getUserId, userId).eq(Task::getStatus, "IN_PROGRESS")));
+        vo.setDoneCount(taskMapper.selectCount(
+                new LambdaQueryWrapper<Task>().eq(Task::getUserId, userId).eq(Task::getStatus, "DONE")));
+        vo.setArchivedCount(taskMapper.selectCount(
+                new LambdaQueryWrapper<Task>().eq(Task::getUserId, userId).eq(Task::getStatus, "ARCHIVED")));
+
+        long total = vo.getTodoCount() + vo.getInProgressCount() + vo.getDoneCount() + vo.getArchivedCount();
+        vo.setTotalCount(total);
+
+        return vo;
+    }
+}
