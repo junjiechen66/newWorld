@@ -13,7 +13,7 @@ public class TaskQueryDTO {
     @Schema(description = "项目ID")
     private Long projectId;
 
-    @Schema(description = "状态: TODO/IN_PROGRESS/DONE/ARCHIVED")
+    @Schema(description = "状态: INCOMPLETE/DONE/SHELVED")
     private String status;
 
     @Schema(description = "优先级: RED/YELLOW/BLUE/FLAG/NONE")

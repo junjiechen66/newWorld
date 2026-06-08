@@ -10,4 +10,5 @@ WORKDIR /app
 COPY --from=builder /app/target/newworld.jar app.jar
 EXPOSE 8080
 ENV SPRING_PROFILES_ACTIVE=prod
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENV TZ=Asia/Shanghai
+ENTRYPOINT ["java", "-Duser.timezone=Asia/Shanghai", "-jar", "app.jar"]

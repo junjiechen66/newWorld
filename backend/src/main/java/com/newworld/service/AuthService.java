@@ -20,4 +20,14 @@ public interface AuthService {
      * 获取当前用户信息
      */
     User getUserInfo(Long userId);
+
+    /**
+     * 修改用户信息
+     */
+    void updateUserInfo(Long userId, String nickname);
+
+    /**
+     * 修改密码
+     */
+    void changePassword(Long userId, String oldPassword, String newPassword);
 }

@@ -8,35 +8,24 @@ import io.swagger.v3.oas.annotations.media.Schema;
 @Schema(description = "任务统计")
 public class TaskStatisticsVO {
 
-    @Schema(description = "待办数量")
-    private Long todoCount;
-
-    @Schema(description = "进行中数量")
-    private Long inProgressCount;
+    @Schema(description = "未完成数量")
+    private Long incompleteCount;
 
     @Schema(description = "已完成数量")
     private Long doneCount;
 
-    @Schema(description = "已归档数量")
-    private Long archivedCount;
+    @Schema(description = "搁置数量")
+    private Long shelvedCount;
 
     @Schema(description = "总数量")
     private Long totalCount;
 
-    public Long getTodoCount() {
-        return todoCount;
+    public Long getIncompleteCount() {
+        return incompleteCount;
     }
 
-    public void setTodoCount(Long todoCount) {
-        this.todoCount = todoCount;
-    }
-
-    public Long getInProgressCount() {
-        return inProgressCount;
-    }
-
-    public void setInProgressCount(Long inProgressCount) {
-        this.inProgressCount = inProgressCount;
+    public void setIncompleteCount(Long incompleteCount) {
+        this.incompleteCount = incompleteCount;
     }
 
     public Long getDoneCount() {
@@ -47,12 +36,12 @@ public class TaskStatisticsVO {
         this.doneCount = doneCount;
     }
 
-    public Long getArchivedCount() {
-        return archivedCount;
+    public Long getShelvedCount() {
+        return shelvedCount;
     }
 
-    public void setArchivedCount(Long archivedCount) {
-        this.archivedCount = archivedCount;
+    public void setShelvedCount(Long shelvedCount) {
+        this.shelvedCount = shelvedCount;
     }
 
     public Long getTotalCount() {

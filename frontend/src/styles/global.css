@@ -98,21 +98,52 @@ html, body, #app {
 }
 
 .fc .fc-event {
-  border: none;
-  padding: 2px 6px;
-  font-size: 12px;
-  border-radius: 3px;
+  border: none !important;
+  padding: 3px 8px !important;
+  font-size: 12px !important;
+  border-radius: 4px !important;
   cursor: pointer;
+  margin-bottom: 2px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.fc .fc-event:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+  z-index: 5;
+  position: relative;
+}
+
+.fc .fc-daygrid-event-harness {
   margin-bottom: 1px;
 }
 
-/* 优先级颜色 */
-.task-priority-red { background: #FEF0F0 !important; color: #F56C6C !important; border-left: 3px solid #F56C6C !important; }
-.task-priority-yellow { background: #FDF6EC !important; color: #E6A23C !important; border-left: 3px solid #E6A23C !important; }
-.task-priority-blue { background: #ECF5FF !important; color: #409EFF !important; border-left: 3px solid #409EFF !important; }
-.task-priority-flag { background: #F0F9EB !important; color: #67C23A !important; border-left: 3px solid #67C23A !important; }
-.task-priority-none { background: #F4F4F5 !important; color: #909399 !important; border-left: 3px solid #c0c4cc !important; }
-.task-status-done { text-decoration: line-through; opacity: 0.6; }
+.fc .fc-event .fc-event-title {
+  font-weight: 600;
+  color: #333 !important;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 0;
+}
+
+/* Selection highlight */
+.fc .fc-highlight {
+  background: rgba(64, 158, 255, 0.15) !important;
+}
+
+/* 优先级颜色 - 未完成任务深色背景，已完成任务浅色 */
+.task-priority-red,
+.task-priority-high { background: #f5c6c6 !important; color: #333 !important; border-left: 4px solid #F56C6C !important; font-weight: 600 !important; }
+.task-priority-yellow,
+.task-priority-medium { background: #fae4b8 !important; color: #333 !important; border-left: 4px solid #E6A23C !important; font-weight: 600 !important; }
+.task-priority-blue,
+.task-priority-low { background: #b8d8f7 !important; color: #333 !important; border-left: 4px solid #409EFF !important; font-weight: 600 !important; }
+.task-priority-flag { background: #d0e8c8 !important; color: #333 !important; border-left: 4px solid #67C23A !important; font-weight: 600 !important; }
+.task-priority-none { background: #dddde0 !important; color: #333 !important; border-left: 4px solid #b0b0b0 !important; font-weight: 500 !important; }
+.task-status-done { text-decoration: line-through; opacity: 0.55; background: #f0f0f0 !important; color: #999 !important; }
+.task-status-done .fc-event-title { color: #999 !important; font-weight: 400 !important; }
 
 /* 上下文菜单 */
 .context-menu {
@@ -163,4 +194,33 @@ html, body, #app {
 }
 .fade-enter-from, .fade-leave-to {
   opacity: 0;
+}
+
+/* ========== 移动端适配 ========== */
+@media (max-width: 768px) {
+  .sidebar { width: 0 !important; min-width: 0 !important; overflow: hidden !important; }
+  .sidebar.collapsed { width: 50px !important; min-width: 50px !important; }
+  .sidebar.collapsed .sidebar-header { padding: 0 10px; }
+  .fc .fc-toolbar { flex-direction: column; gap: 8px; }
+  .fc .fc-toolbar-title { font-size: 15px !important; }
+  .fc .fc-button { font-size: 11px !important; padding: 3px 8px !important; }
+  .fc .fc-event { font-size: 11px !important; padding: 2px 4px !important; }
+  .content-area { padding: 8px !important; }
+  .header .search-input { max-width: 180px !important; }
+  .header-center { justify-content: flex-end !important; }
+  .header-right .el-button span { display: none; }
+  .el-dialog { width: 90% !important; max-width: 90vw !important; }
+  .context-menu { min-width: 140px !important; }
+  .context-menu .menu-item { padding: 10px 12px !important; font-size: 14px !important; }
+  .detail-panel { width: 100% !important; }
+  .task-list-page .el-form--inline .el-form-item { margin-right: 0; width: 100%; }
+  .task-list-page .el-form--inline .el-form-item .el-select,
+  .task-list-page .el-form--inline .el-form-item .el-input { width: 100% !important; }
+}
+
+@media (max-width: 480px) {
+  .fc .fc-header-toolbar { flex-wrap: wrap; }
+  .fc .fc-daygrid-day-number { font-size: 11px !important; }
+  .calendar-container { padding: 8px !important; }
+  .login-card { width: 90% !important; }
 }

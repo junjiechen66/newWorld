@@ -4,6 +4,7 @@ import { ref } from 'vue'
 export const useAppStore = defineStore('app', () => {
   const sidebarCollapsed = ref(false)
   const searchKeyword = ref('')
+  const showCompleted = ref(false)
 
   const toggleSidebar = () => {
     sidebarCollapsed.value = !sidebarCollapsed.value
@@ -13,5 +14,5 @@ export const useAppStore = defineStore('app', () => {
     searchKeyword.value = keyword
   }
 
-  return { sidebarCollapsed, searchKeyword, toggleSidebar, setSearchKeyword }
+  return { sidebarCollapsed, searchKeyword, showCompleted, toggleSidebar, setSearchKeyword }
 })

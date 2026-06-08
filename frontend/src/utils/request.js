@@ -1,5 +1,6 @@
 import axios from 'axios'
 import { ElMessage } from 'element-plus'
+import router from '@/router'
 
 const request = axios.create({
   baseURL: '/api',
@@ -34,7 +35,7 @@ request.interceptors.response.use(
         case 401:
           ElMessage.error('登录已过期，请重新登录')
           localStorage.removeItem('token')
-          window.location.href = '/login'
+          router.push('/login')
           break
         case 403:
           ElMessage.error('没有权限访问')

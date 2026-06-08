@@ -69,7 +69,7 @@ async function uploadSource(conn, includeFrontend = true) {
   // 解压
   LOG.info('服务器解压...');
   const r = await sshExec(conn,
-    `cd ${CONFIG.projectDir} && tar xzf /tmp/newworld-deploy.tar.gz && rm -f /tmp/newworld-deploy.tar.gz`
+    `cd ${CONFIG.projectDir} && tar xzf /tmp/newworld-deploy.tar.gz --warning=no-timestamp && rm -f /tmp/newworld-deploy.tar.gz`
   );
   if (r.stderr && !r.stderr.includes('tar: Removing leading')) {
     LOG.fail('解压警告: ' + r.stderr);

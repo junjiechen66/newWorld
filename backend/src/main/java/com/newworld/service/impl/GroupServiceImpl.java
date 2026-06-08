@@ -54,11 +54,11 @@ public class GroupServiceImpl implements GroupService {
                             .orderByAsc(Project::getSortOrder));
         }
 
-        // 查询所有任务（仅待办和进行中）
+        // 查询所有任务（不含笔记）
         List<Task> tasks = taskMapper.selectList(
                 new LambdaQueryWrapper<Task>()
                         .eq(Task::getUserId, userId)
-                        .in(Task::getStatus, "TODO", "IN_PROGRESS")
+                        .eq(Task::getIsNote, false)
                         .orderByAsc(Task::getSortOrder));
 
         // 按项目ID分组任务

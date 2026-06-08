@@ -51,7 +51,7 @@ CREATE TABLE IF NOT EXISTS task (
     title           VARCHAR(200) NOT NULL COMMENT '任务标题',
     description     TEXT COMMENT '任务描述（多文本内容）',
     priority        VARCHAR(20) DEFAULT 'NONE' COMMENT '优先级: RED/YELLOW/BLUE/FLAG/NONE',
-    status          VARCHAR(20) DEFAULT 'TODO' COMMENT '状态: TODO/IN_PROGRESS/DONE/ARCHIVED',
+    status          VARCHAR(20) DEFAULT 'INCOMPLETE' COMMENT '状态: INCOMPLETE/DONE/SHELVED',
     tag             VARCHAR(100) COMMENT '标签',
     start_date      DATE COMMENT '开始日期',
     due_date        DATE COMMENT '截止日期',

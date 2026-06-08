@@ -58,7 +58,7 @@ public class TaskServiceImpl implements TaskService {
             task.setPriority("NONE");
         }
         if (task.getStatus() == null) {
-            task.setStatus("TODO");
+            task.setStatus("INCOMPLETE");
         }
         if (task.getIsNote() == null) {
             task.setIsNote(false);
@@ -120,7 +120,7 @@ public class TaskServiceImpl implements TaskService {
         copy.setTitle(original.getTitle() + " (副本)");
         copy.setDescription(original.getDescription());
         copy.setPriority(original.getPriority());
-        copy.setStatus("TODO");
+        copy.setStatus("INCOMPLETE");
         copy.setTag(original.getTag());
         copy.setStartDate(original.getStartDate());
         copy.setDueDate(original.getDueDate());
@@ -135,7 +135,7 @@ public class TaskServiceImpl implements TaskService {
         if (task == null) {
             throw new BusinessException("任务不存在");
         }
-        task.setStatus("ARCHIVED");
+        task.setStatus("SHELVED");
         taskMapper.updateById(task);
         return task;
     }
@@ -176,16 +176,24 @@ public class TaskServiceImpl implements TaskService {
     public TaskStatisticsVO statistics(Long userId) {
         TaskStatisticsVO vo = new TaskStatisticsVO();
 
-        vo.setTodoCount(taskMapper.selectCount(
-                new LambdaQueryWrapper<Task>().eq(Task::getUserId, userId).eq(Task::getStatus, "TODO")));
-        vo.setInProgressCount(taskMapper.selectCount(
-                new LambdaQueryWrapper<Task>().eq(Task::getUserId, userId).eq(Task::getStatus, "IN_PROGRESS")));
+        // 只统计任务（不包含笔记）
+        vo.setIncompleteCount(taskMapper.selectCount(
+                new LambdaQueryWrapper<Task>()
+                        .eq(Task::getUserId, userId)
+                        .eq(Task::getIsNote, false)
+                        .eq(Task::getStatus, "INCOMPLETE")));
         vo.setDoneCount(taskMapper.selectCount(
-                new LambdaQueryWrapper<Task>().eq(Task::getUserId, userId).eq(Task::getStatus, "DONE")));
-        vo.setArchivedCount(taskMapper.selectCount(
-                new LambdaQueryWrapper<Task>().eq(Task::getUserId, userId).eq(Task::getStatus, "ARCHIVED")));
+                new LambdaQueryWrapper<Task>()
+                        .eq(Task::getUserId, userId)
+                        .eq(Task::getIsNote, false)
+                        .eq(Task::getStatus, "DONE")));
+        vo.setShelvedCount(taskMapper.selectCount(
+                new LambdaQueryWrapper<Task>()
+                        .eq(Task::getUserId, userId)
+                        .eq(Task::getIsNote, false)
+                        .eq(Task::getStatus, "SHELVED")));
 
-        long total = vo.getTodoCount() + vo.getInProgressCount() + vo.getDoneCount() + vo.getArchivedCount();
+        long total = vo.getIncompleteCount() + vo.getDoneCount() + vo.getShelvedCount();
         vo.setTotalCount(total);
 
         return vo;

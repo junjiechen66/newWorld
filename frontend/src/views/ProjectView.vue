@@ -23,9 +23,9 @@
                   <span class="project-name">{{ project.name }}</span>
                 </div>
                 <div class="project-stats">
-                  <span class="stat">待办: {{ getTaskCountByStatus(project.children, 'TODO') }}</span>
-                  <span class="stat">进行中: {{ getTaskCountByStatus(project.children, 'IN_PROGRESS') }}</span>
+                  <span class="stat">未完成: {{ getTaskCountByStatus(project.children, 'INCOMPLETE') }}</span>
                   <span class="stat">已完成: {{ getTaskCountByStatus(project.children, 'DONE') }}</span>
+                  <span class="stat">搁置: {{ getTaskCountByStatus(project.children, 'SHELVED') }}</span>
                 </div>
               </el-card>
             </el-col>

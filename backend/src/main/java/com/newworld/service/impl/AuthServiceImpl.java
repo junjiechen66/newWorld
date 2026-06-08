@@ -57,6 +57,18 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
+    public void updateUserInfo(Long userId, String nickname) {
+        User user = userMapper.selectById(userId);
+        if (user == null) {
+            throw new BusinessException("用户不存在");
+        }
+        if (nickname != null && !nickname.trim().isEmpty()) {
+            user.setNickname(nickname);
+        }
+        userMapper.updateById(user);
+    }
+
+    @Override
     public User getUserInfo(Long userId) {
         User user = userMapper.selectById(userId);
         if (user == null) {
@@ -64,5 +76,21 @@ public class AuthServiceImpl implements AuthService {
         }
         user.setPassword(null); // 不返回密码
         return user;
+    }
+
+    @Override
+    public void changePassword(Long userId, String oldPassword, String newPassword) {
+        User user = userMapper.selectById(userId);
+        if (user == null) {
+            throw new BusinessException("用户不存在");
+        }
+        // 验证旧密码
+        String encryptedOld = DigestUtil.sha256Hex(oldPassword);
+        if (!user.getPassword().equals(encryptedOld)) {
+            throw new BusinessException("旧密码不正确");
+        }
+        // 更新密码
+        user.setPassword(DigestUtil.sha256Hex(newPassword));
+        userMapper.updateById(user);
     }
 }

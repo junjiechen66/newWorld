@@ -1,7 +1,9 @@
 package com.newworld.controller;
 
 import com.newworld.common.Result;
+import com.newworld.dto.ChangePasswordRequest;
 import com.newworld.dto.LoginRequest;
+import com.newworld.dto.UpdateUserRequest;
 import com.newworld.entity.User;
 import com.newworld.service.AuthService;
 import com.newworld.config.AuthInterceptor;
@@ -44,6 +46,22 @@ public class AuthController {
         Long userId = AuthInterceptor.getCurrentUserId();
         User user = authService.getUserInfo(userId);
         return Result.success(user);
+    }
+
+    @Operation(summary = "修改用户信息")
+    @PutMapping("/user-info")
+    public Result<Void> updateUserInfo(@RequestBody UpdateUserRequest request) {
+        Long userId = AuthInterceptor.getCurrentUserId();
+        authService.updateUserInfo(userId, request.getNickname());
+        return Result.success("修改成功");
+    }
+
+    @Operation(summary = "修改密码")
+    @PutMapping("/password")
+    public Result<Void> changePassword(@Valid @RequestBody ChangePasswordRequest request) {
+        Long userId = AuthInterceptor.getCurrentUserId();
+        authService.changePassword(userId, request.getOldPassword(), request.getNewPassword());
+        return Result.success("密码修改成功");
     }
 
     @Operation(summary = "退出登录")
