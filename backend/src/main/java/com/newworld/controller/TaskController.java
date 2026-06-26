@@ -1,10 +1,12 @@
 package com.newworld.controller;
 
 import com.newworld.common.Result;
+import com.newworld.common.annotation.RequirePermission;
 import com.newworld.config.AuthInterceptor;
 import com.newworld.dto.TaskQueryDTO;
 import com.newworld.dto.TaskStatisticsVO;
 import com.newworld.entity.Task;
+import com.newworld.service.ShareService;
 import com.newworld.service.TaskService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -22,16 +24,22 @@ public class TaskController {
     @Autowired
     private TaskService taskService;
 
-    @Operation(summary = "查询任务列表")
+    @Autowired
+    private ShareService shareService;
+
+    @Operation(summary = "查询任务列表（含共享给我的）")
     @GetMapping
     public Result<List<Task>> list(TaskQueryDTO query) {
         Long userId = AuthInterceptor.getCurrentUserId();
-        List<Task> list = taskService.queryList(query, userId);
+        List<Task> list = shareService.queryTasksWithShare(
+                userId, query.getIsNote(), query.getProjectId(),
+                query.getStatus(), query.getPriority(), query.getKeyword());
         return Result.success(list);
     }
 
     @Operation(summary = "获取单个任务")
     @GetMapping("/{id}")
+    @RequirePermission(resourceType = "TASK", level = "VIEW")
     public Result<Task> getById(@PathVariable Long id) {
         return Result.success(taskService.getById(id));
     }
@@ -46,6 +54,7 @@ public class TaskController {
 
     @Operation(summary = "更新任务（含拖拽排期）")
     @PutMapping("/{id}")
+    @RequirePermission(resourceType = "TASK", level = "EDIT")
     public Result<Task> update(@PathVariable Long id, @RequestBody Task task) {
         task.setId(id);
         return Result.success(taskService.update(task));
@@ -53,6 +62,7 @@ public class TaskController {
 
     @Operation(summary = "删除任务")
     @DeleteMapping("/{id}")
+    @RequirePermission(resourceType = "TASK", level = "OWNER")
     public Result<Void> delete(@PathVariable Long id) {
         taskService.delete(id);
         return Result.success("删除成功");
@@ -60,39 +70,37 @@ public class TaskController {
 
     @Operation(summary = "更新任务状态")
     @PutMapping("/{id}/status")
+    @RequirePermission(resourceType = "TASK", level = "EDIT")
     public Result<Task> updateStatus(@PathVariable Long id, @RequestBody Map<String, String> body) {
         return Result.success(taskService.updateStatus(id, body.get("status")));
     }
 
     @Operation(summary = "设置任务优先级")
     @PutMapping("/{id}/priority")
+    @RequirePermission(resourceType = "TASK", level = "EDIT")
     public Result<Task> updatePriority(@PathVariable Long id, @RequestBody Map<String, String> body) {
         return Result.success(taskService.updatePriority(id, body.get("priority")));
     }
 
     @Operation(summary = "创建任务副本")
     @PutMapping("/{id}/duplicate")
+    @RequirePermission(resourceType = "TASK", level = "EDIT")
     public Result<Task> duplicate(@PathVariable Long id) {
         return Result.success("复制成功", taskService.duplicate(id));
     }
 
     @Operation(summary = "归档任务")
     @PutMapping("/{id}/archive")
+    @RequirePermission(resourceType = "TASK", level = "EDIT")
     public Result<Task> archive(@PathVariable Long id) {
         return Result.success("归档成功", taskService.archive(id));
     }
 
     @Operation(summary = "转换为笔记")
     @PutMapping("/{id}/convert-note")
+    @RequirePermission(resourceType = "TASK", level = "EDIT")
     public Result<Task> convertToNote(@PathVariable Long id) {
         return Result.success("转换成功", taskService.convertToNote(id));
-    }
-
-    @Operation(summary = "生成分享链接")
-    @GetMapping("/{id}/share-link")
-    public Result<Map<String, String>> generateShareLink(@PathVariable Long id) {
-        String link = taskService.generateShareLink(id);
-        return Result.success(java.util.Collections.singletonMap("link", link));
     }
 
     @Operation(summary = "搜索任务")
@@ -108,4 +116,12 @@ public class TaskController {
         Long userId = AuthInterceptor.getCurrentUserId();
         return Result.success(taskService.statistics(userId));
     }
+
+    @Operation(summary = "今日任务")
+    @GetMapping("/today")
+    public Result<List<Task>> todayTasks() {
+        Long userId = AuthInterceptor.getCurrentUserId();
+        return Result.success(taskService.getTodayTasks(userId));
+    }
 }
+

@@ -1,6 +1,7 @@
 package com.newworld.controller;
 
 import com.newworld.common.Result;
+import com.newworld.common.annotation.RequirePermission;
 import com.newworld.config.AuthInterceptor;
 import com.newworld.entity.Project;
 import com.newworld.service.ProjectService;
@@ -36,6 +37,7 @@ public class ProjectController {
 
     @Operation(summary = "更新项目")
     @PutMapping("/{id}")
+    @RequirePermission(resourceType = "PROJECT", level = "EDIT")
     public Result<Project> update(@PathVariable Long id, @RequestBody Project project) {
         project.setId(id);
         return Result.success(projectService.update(project));
@@ -43,6 +45,7 @@ public class ProjectController {
 
     @Operation(summary = "删除项目")
     @DeleteMapping("/{id}")
+    @RequirePermission(resourceType = "PROJECT", level = "OWNER")
     public Result<Void> delete(@PathVariable Long id) {
         projectService.delete(id);
         return Result.success("删除成功");

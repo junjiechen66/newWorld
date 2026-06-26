@@ -11,8 +11,8 @@ import com.newworld.service.TaskService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.List;
-import java.util.UUID;
 
 @Service
 public class TaskServiceImpl implements TaskService {
@@ -55,7 +55,7 @@ public class TaskServiceImpl implements TaskService {
     @Override
     public Task create(Task task) {
         if (task.getPriority() == null) {
-            task.setPriority("NONE");
+            task.setPriority("Q1");
         }
         if (task.getStatus() == null) {
             task.setStatus("INCOMPLETE");
@@ -152,18 +152,6 @@ public class TaskServiceImpl implements TaskService {
     }
 
     @Override
-    public String generateShareLink(Long id) {
-        Task task = taskMapper.selectById(id);
-        if (task == null) {
-            throw new BusinessException("任务不存在");
-        }
-        // 生成一个唯一分享标识
-        String shareId = UUID.randomUUID().toString().replace("-", "").substring(0, 12);
-        // 实际使用时替换为真实域名
-        return "/share/task/" + shareId;
-    }
-
-    @Override
     public List<Task> search(String keyword, Long userId) {
         return taskMapper.selectList(
                 new LambdaQueryWrapper<Task>()
@@ -197,5 +185,36 @@ public class TaskServiceImpl implements TaskService {
         vo.setTotalCount(total);
 
         return vo;
+    }
+
+    @Override
+    public List<Task> getTodayTasks(Long userId) {
+        LocalDate today = LocalDate.now();
+        return taskMapper.selectList(
+                new LambdaQueryWrapper<Task>()
+                        .eq(Task::getUserId, userId)
+                        .eq(Task::getIsNote, false)
+                        .and(wrapper -> wrapper
+                                // 开始结束日期包含当天: (start_date <= today OR IS NULL) AND (due_date >= today OR IS NULL)
+                                .and(w -> w
+                                        .le(Task::getStartDate, today)
+                                        .or()
+                                        .isNull(Task::getStartDate)
+                                )
+                                .and(w -> w
+                                        .ge(Task::getDueDate, today)
+                                        .or()
+                                        .isNull(Task::getDueDate)
+                                )
+                        )
+                        // 排除两个日期都为空的任务
+                        .and(w -> w
+                                .isNotNull(Task::getStartDate)
+                                .or()
+                                .isNotNull(Task::getDueDate)
+                        )
+                        .orderByAsc(Task::getPriority)
+                        .orderByAsc(Task::getDueDate)
+        );
     }
 }

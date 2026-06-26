@@ -1,7 +1,14 @@
 <template>
-  <div class="md-editor" :class="{ 'md-preview-only': !editable }">
+  <div
+    class="md-editor"
+    :class="{
+      'md-preview-only': !editable,
+      'md-fullscreen': isFullscreen,
+      'md-editing': isEditing
+    }"
+  >
     <!-- Toolbar (only in edit mode) -->
-    <div v-if="editable" class="md-toolbar">
+    <div v-if="editable && isEditing" class="md-toolbar" @mousedown.prevent>
       <el-tooltip content="粗体" placement="top">
         <el-button text size="small" class="tb-btn" @click="insertMarkdown('bold')"><b>B</b></el-button>
       </el-tooltip>
@@ -26,50 +33,101 @@
       <el-tooltip content="链接" placement="top">
         <el-button text size="small" class="tb-btn" @click="insertMarkdown('link')">🔗</el-button>
       </el-tooltip>
-      <el-divider direction="vertical" />
-      <el-tooltip content="预览" placement="top">
-        <el-button text size="small" :type="showPreview ? 'primary' : ''" class="tb-btn" @click="togglePreview">{{ showPreview ? '编辑' : '预览' }}</el-button>
+      <el-tooltip content="图片" placement="top">
+        <el-button text size="small" class="tb-btn" @click="triggerImageUpload">🖼</el-button>
+      </el-tooltip>
+      <input
+        ref="fileInputRef"
+        type="file"
+        accept="image/jpeg,image/png,image/gif,image/webp"
+        style="display: none"
+        @change="handleImageUpload"
+      />
+      <div style="flex:1"></div>
+      <el-tooltip :content="isFullscreen ? '退出全屏' : '全屏'" placement="top">
+        <el-button text size="small" class="tb-btn" @click="toggleFullscreen">
+          {{ isFullscreen ? '⊡' : '⊞' }}
+        </el-button>
       </el-tooltip>
     </div>
 
-    <!-- Edit area -->
+    <!-- Preview area (shown when NOT editing, or readonly) -->
+    <div
+      v-if="!isEditing || !editable"
+      class="md-preview"
+      :class="{ 'md-preview-clickable': editable }"
+      @click="enterEdit"
+      v-html="renderedHtml"
+    ></div>
+
+    <!-- Edit area (shown when editing) -->
     <textarea
-      v-if="editable && !showPreview"
+      v-if="editable && isEditing"
       ref="textareaRef"
       :value="modelValue"
       @input="onInput"
+      @blur="exitEdit"
+      @keydown.esc.prevent="exitEdit"
+      @paste="handlePaste"
+      @drop.prevent="handleDrop"
+      @dragover.prevent
       class="md-textarea"
       :rows="rows"
       :placeholder="placeholder"
     ></textarea>
 
-    <!-- Preview area -->
-    <div v-if="showPreview || !editable" class="md-preview" v-html="renderedHtml"></div>
+    <!-- Fullscreen overlay background -->
+    <div v-if="isFullscreen && isEditing" class="md-fullscreen-bg" @click.self="exitEdit"></div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, nextTick } from 'vue'
 import { marked } from 'marked'
+import { ElMessage } from 'element-plus'
+import { uploadFile } from '@/api/upload'
 
 const props = defineProps({
   modelValue: { type: String, default: '' },
   editable: { type: Boolean, default: true },
   placeholder: { type: String, default: '请输入内容...' },
-  rows: { type: Number, default: 6 }
+  rows: { type: Number, default: 6 },
+  startEditing: { type: Boolean, default: false }
 })
 
 const emit = defineEmits(['update:modelValue'])
 
 const textareaRef = ref(null)
-const showPreview = ref(false)
+const fileInputRef = ref(null)
+const uploading = ref(false)
+const isEditing = ref(props.startEditing)
+const isFullscreen = ref(false)
 
 const onInput = (e) => {
   emit('update:modelValue', e.target.value)
 }
 
-const togglePreview = () => {
-  showPreview.value = !showPreview.value
+const enterEdit = () => {
+  if (!props.editable) return
+  isEditing.value = true
+  nextTick(() => {
+    textareaRef.value?.focus()
+  })
+}
+
+const exitEdit = () => {
+  // Don't exit if clicking toolbar buttons (handled by stopPropagation in toolbar)
+  isEditing.value = false
+  if (isFullscreen.value) {
+    isFullscreen.value = false
+  }
+}
+
+const toggleFullscreen = () => {
+  isFullscreen.value = !isFullscreen.value
+  nextTick(() => {
+    textareaRef.value?.focus()
+  })
 }
 
 const renderedHtml = computed(() => {
@@ -118,17 +176,84 @@ const insertMarkdown = (type) => {
       return
   }
 
-  before = props.modelValue.substring(0, start)
-  after = props.modelValue.substring(end)
-  const newVal = before + insert + after
+  insertText(insert)
+}
+
+const insertText = (text) => {
+  const ta = textareaRef.value
+  if (!ta) return
+  const start = ta.selectionStart
+  const end = ta.selectionEnd
+  const before = props.modelValue.substring(0, start)
+  const after = props.modelValue.substring(end)
+  const newVal = before + text + after
   emit('update:modelValue', newVal)
 
-  // Restore cursor position after Vue update
-  const cursorPos = start + insert.length
+  const cursorPos = start + text.length
   requestAnimationFrame(() => {
     ta.focus()
     ta.setSelectionRange(cursorPos, cursorPos)
   })
+}
+
+const triggerImageUpload = () => {
+  fileInputRef.value?.click()
+}
+
+const handleImageUpload = async (event) => {
+  const file = event.target.files[0]
+  if (!file) return
+  await processImageFile(file)
+  event.target.value = ''
+}
+
+// Shared: upload and insert image markdown
+const processImageFile = async (file) => {
+  if (!file.type.startsWith('image/')) {
+    ElMessage.warning('只支持图片文件')
+    return
+  }
+  if (file.size > 5 * 1024 * 1024) {
+    ElMessage.warning('图片大小不能超过5MB')
+    return
+  }
+  uploading.value = true
+  try {
+    const res = await uploadFile(file)
+    const url = res.data.url
+    insertText(`\n![image](${url})\n`)
+    ElMessage.success('图片上传成功')
+  } catch (e) {
+    ElMessage.error('图片上传失败')
+  } finally {
+    uploading.value = false
+  }
+}
+
+// Ctrl+V paste image
+const handlePaste = (e) => {
+  const items = e.clipboardData?.items
+  if (!items) return
+  for (const item of items) {
+    if (item.type.startsWith('image/')) {
+      e.preventDefault()
+      const file = item.getAsFile()
+      if (file) processImageFile(file)
+      return
+    }
+  }
+}
+
+// Drag and drop image
+const handleDrop = (e) => {
+  const files = e.dataTransfer?.files
+  if (!files || !files.length) return
+  for (const file of files) {
+    if (file.type.startsWith('image/')) {
+      processImageFile(file)
+      return
+    }
+  }
 }
 </script>
 
@@ -136,10 +261,26 @@ const insertMarkdown = (type) => {
 .md-editor {
   border: 1px solid #dcdfe6;
   border-radius: 6px;
-  overflow: hidden;
+  overflow: visible;
+  position: relative;
 }
 .md-editor.md-preview-only {
   border: none;
+}
+.md-editor.md-fullscreen {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  z-index: 9999;
+  border-radius: 0;
+  border: none;
+  display: flex;
+  flex-direction: column;
+}
+.md-fullscreen-bg {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  z-index: -1;
+  background: rgba(0,0,0,0.4);
 }
 .md-toolbar {
   display: flex;
@@ -149,6 +290,7 @@ const insertMarkdown = (type) => {
   background: #f5f7fa;
   border-bottom: 1px solid #e4e7ed;
   flex-wrap: wrap;
+  flex-shrink: 0;
 }
 .tb-btn {
   font-size: 13px;
@@ -170,6 +312,11 @@ const insertMarkdown = (type) => {
   background: #fff;
   box-sizing: border-box;
 }
+.md-editor.md-fullscreen .md-textarea {
+  flex: 1;
+  resize: none;
+  min-height: 0;
+}
 .md-textarea:focus {
   background: #fafafa;
 }
@@ -179,6 +326,13 @@ const insertMarkdown = (type) => {
   line-height: 1.8;
   background: #fff;
   min-height: 60px;
+  overflow-y: auto;
+}
+.md-preview.md-preview-clickable {
+  cursor: text;
+}
+.md-preview.md-preview-clickable:hover {
+  background: #fafcff;
 }
 .md-preview :deep(h1),
 .md-preview :deep(h2),

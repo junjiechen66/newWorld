@@ -7,6 +7,12 @@ spring:
   application:
     name: newworld
 
+  # 文件上传配置
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 10MB
+
   # 数据源配置
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -66,6 +72,10 @@ knife4j:
 jwt:
   secret: NewWorldSecretKey2024!@#$%^&*()ForPersonalUse
   expiration: 86400000  # 24小时
+
+# 文件上传路径
+upload:
+  path: ./uploads/
 
 # 日志配置
 logging:

@@ -8,6 +8,7 @@ RUN mvn clean package -DskipTests -B
 FROM openjdk:8-jre-slim
 WORKDIR /app
 COPY --from=builder /app/target/newworld.jar app.jar
+RUN mkdir -p /app/uploads
 EXPOSE 8080
 ENV SPRING_PROFILES_ACTIVE=prod
 ENV TZ=Asia/Shanghai

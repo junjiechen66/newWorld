@@ -59,11 +59,6 @@ public interface TaskService {
     Task convertToNote(Long id);
 
     /**
-     * 生成分享链接
-     */
-    String generateShareLink(Long id);
-
-    /**
      * 搜索任务
      */
     List<Task> search(String keyword, Long userId);
@@ -72,4 +67,9 @@ public interface TaskService {
      * 获取任务统计
      */
     TaskStatisticsVO statistics(Long userId);
+
+    /**
+     * 获取今日任务
+     */
+    List<Task> getTodayTasks(Long userId);
 }

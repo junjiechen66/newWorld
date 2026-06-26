@@ -13,9 +13,19 @@
             <el-icon :size="20"><Calendar /></el-icon>
           </div>
         </el-tooltip>
+        <el-tooltip content="今日" placement="right">
+          <div class="nav-icon" :class="{ active: route.path === '/today' }" @click="router.push('/today')">
+            <el-icon :size="20"><Clock /></el-icon>
+          </div>
+        </el-tooltip>
         <el-tooltip content="任务" placement="right">
           <div class="nav-icon" :class="{ active: route.path === '/tasks' }" @click="router.push('/tasks')">
             <el-icon :size="20"><List /></el-icon>
+          </div>
+        </el-tooltip>
+        <el-tooltip content="四象限" placement="right">
+          <div class="nav-icon" :class="{ active: route.path === '/quadrant' }" @click="router.push('/quadrant')">
+            <el-icon :size="20"><Grid /></el-icon>
           </div>
         </el-tooltip>
         <el-tooltip content="笔记" placement="right">
@@ -26,6 +36,11 @@
         <el-tooltip content="项目" placement="right">
           <div class="nav-icon" :class="{ active: route.path === '/projects' }" @click="router.push('/projects')">
             <el-icon :size="20"><Collection /></el-icon>
+          </div>
+        </el-tooltip>
+        <el-tooltip content="共享" placement="right">
+          <div class="nav-icon" :class="{ active: route.path === '/shared-with-me' }" @click="router.push('/shared-with-me')">
+            <el-icon :size="20"><Share /></el-icon>
           </div>
         </el-tooltip>
         <div class="nav-divider"></div>
@@ -50,6 +65,39 @@
           <span class="stat-label">搁置</span>
           <span class="stat-value">{{ stats.shelvedCount || 0 }}</span>
         </div>
+      </div>
+
+      <!-- Today entry (expanded) -->
+      <div
+        v-if="!appStore.sidebarCollapsed"
+        class="all-projects-item"
+        :class="{ active: route.path === '/today' }"
+        @click="router.push('/today')"
+      >
+        <el-icon :size="16"><Clock /></el-icon>
+        <span class="node-label">今日任务</span>
+      </div>
+
+      <!-- Quadrant entry (expanded) -->
+      <div
+        v-if="!appStore.sidebarCollapsed"
+        class="all-projects-item"
+        :class="{ active: route.path === '/quadrant' }"
+        @click="router.push('/quadrant')"
+      >
+        <el-icon :size="16"><Grid /></el-icon>
+        <span class="node-label">四象限</span>
+      </div>
+
+      <!-- Shared with me entry (expanded) -->
+      <div
+        v-if="!appStore.sidebarCollapsed"
+        class="all-projects-item"
+        :class="{ active: route.path === '/shared-with-me' }"
+        @click="router.push('/shared-with-me')"
+      >
+        <el-icon :size="16"><Share /></el-icon>
+        <span class="node-label">共享给我</span>
       </div>
 
       <el-divider style="margin: 8px 0;" v-if="!appStore.sidebarCollapsed" />
@@ -113,7 +161,7 @@
 
     <!-- Add Group Dialog -->
     <el-dialog v-model="showAddGroup" title="新建分组" width="400px">
-      <el-form :model="groupForm" label-width="80px">
+      <el-form :model="groupForm" label-width="80px" @keyup.enter="submitGroup" @submit.prevent>
         <el-form-item label="分组名称">
           <el-input v-model="groupForm.name" placeholder="请输入分组名称" />
         </el-form-item>
@@ -126,12 +174,21 @@
 
     <!-- Add Project Dialog -->
     <el-dialog v-model="showAddProjectDialog" title="新建项目" width="400px">
-      <el-form :model="projectForm" label-width="80px">
+      <el-form :model="projectForm" label-width="80px" @keyup.enter="submitProject" @submit.prevent>
         <el-form-item label="项目名称" required>
           <el-input v-model="projectForm.name" placeholder="请输入项目名称" />
         </el-form-item>
         <el-form-item label="颜色">
-          <el-color-picker v-model="projectForm.color" />
+          <div class="color-picker-group">
+            <span
+              v-for="c in presetColors"
+              :key="c"
+              class="color-dot"
+              :class="{ active: projectForm.color === c }"
+              :style="{ background: c }"
+              @click="projectForm.color = c"
+            />
+          </div>
         </el-form-item>
       </el-form>
       <template #footer>
@@ -142,12 +199,21 @@
 
     <!-- Rename Dialog (for both group and project) -->
     <el-dialog v-model="showRenameDialog" :title="renameTitle" width="400px">
-      <el-form :model="renameForm" label-width="80px">
+      <el-form :model="renameForm" label-width="80px" @keyup.enter="submitRename" @submit.prevent>
         <el-form-item :label="renameType === 'group' ? '分组名称' : '项目名称'">
           <el-input v-model="renameForm.name" placeholder="请输入名称" />
         </el-form-item>
         <el-form-item label="颜色" v-if="renameType === 'project'">
-          <el-color-picker v-model="renameForm.color" />
+          <div class="color-picker-group">
+            <span
+              v-for="c in presetColors"
+              :key="c"
+              class="color-dot"
+              :class="{ active: renameForm.color === c }"
+              :style="{ background: c }"
+              @click="renameForm.color = c"
+            />
+          </div>
         </el-form-item>
       </el-form>
       <template #footer>
@@ -167,12 +233,16 @@ import { getTaskStatistics } from '@/api/task'
 import { createGroup, updateGroup, deleteGroup } from '@/api/group'
 import { createProject, updateProject, deleteProject } from '@/api/project'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Calendar, List, EditPen, Collection, FolderOpened } from '@element-plus/icons-vue'
+import { emitRefresh, emitOpenTaskDetail, onRefreshData } from '@/utils/events'
+import { PRESET_COLORS } from '@/utils/constants'
+import { Calendar, List, EditPen, Collection, FolderOpened, Clock, Grid, Plus, Edit, Delete, Folder, Document, Fold, Share } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const route = useRoute()
 const projectStore = useProjectStore()
 const appStore = useAppStore()
+
+const presetColors = PRESET_COLORS
 
 const stats = ref({})
 const showAddGroup = ref(false)
@@ -213,7 +283,7 @@ const filteredTreeData = computed(() => {
 })
 
 const priorityTagType = (priority) => {
-  const map = { RED: 'danger', YELLOW: 'warning', BLUE: 'primary', FLAG: 'success', NONE: 'info' }
+  const map = { Q1: 'danger', Q2: 'warning', Q3: 'primary', Q4: 'success', RED: 'danger', YELLOW: 'warning', BLUE: 'primary', FLAG: 'success', NONE: 'info' }
   return map[priority] || 'info'
 }
 
@@ -223,9 +293,8 @@ const handleNodeClick = (data) => {
     projectStore.selectProject(data.id)
     router.push({ path: '/calendar', query: { projectId: data.id } })
   } else if (data.type === 'task') {
-    projectStore.selectTask(data.id)
     // Emit event to open task detail panel
-    window.dispatchEvent(new CustomEvent('open-task-detail', { detail: { taskId: data.id } }))
+    emitOpenTaskDetail(data.id)
   }
 }
 
@@ -252,7 +321,7 @@ const submitGroup = async () => {
   showAddGroup.value = false
   groupForm.name = ''
   await projectStore.fetchTree()
-  window.dispatchEvent(new CustomEvent('refresh-data'))
+  emitRefresh()
 }
 
 const addProject = () => {
@@ -280,7 +349,7 @@ const submitProject = async () => {
     ElMessage.success('项目创建成功')
     showAddProjectDialog.value = false
     await projectStore.fetchTree()
-    window.dispatchEvent(new CustomEvent('refresh-data'))
+    emitRefresh()
   } catch (e) {}
 }
 
@@ -323,7 +392,7 @@ const submitRename = async () => {
     ElMessage.success('重命名成功')
     showRenameDialog.value = false
     await projectStore.fetchTree()
-    window.dispatchEvent(new CustomEvent('refresh-data'))
+    emitRefresh()
   } catch (e) {}
 }
 
@@ -345,7 +414,7 @@ const deleteNode = async () => {
     if (nodeType === 'project' && String(route.query.projectId) === String(nodeId)) {
       router.push({ path: '/calendar', query: {} })
     } else {
-      window.dispatchEvent(new CustomEvent('refresh-data'))
+      emitRefresh()
     }
   }
 }
@@ -359,14 +428,16 @@ const handleRefreshData = () => {
   loadStats()
 }
 
+let cleanupRefresh = null
+
 onMounted(async () => {
   await projectStore.fetchTree()
   await loadStats()
-  window.addEventListener('refresh-data', handleRefreshData)
+  cleanupRefresh = onRefreshData(handleRefreshData)
 })
 
 onBeforeUnmount(() => {
-  window.removeEventListener('refresh-data', handleRefreshData)
+  cleanupRefresh?.()
 })
 </script>
 
@@ -456,12 +527,6 @@ onBeforeUnmount(() => {
   color: #409eff;
   font-weight: 600;
 }
-.show-completed-row {
-  padding: 0 12px;
-  margin-top: 4px;
-  font-size: 13px;
-}
-
 /* Collapsed nav */
 .collapsed-nav {
   display: flex;

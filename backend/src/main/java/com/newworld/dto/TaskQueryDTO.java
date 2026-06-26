@@ -1,6 +1,7 @@
 package com.newworld.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import org.springframework.format.annotation.DateTimeFormat;
 
 import java.time.LocalDate;
 
@@ -16,19 +17,23 @@ public class TaskQueryDTO {
     @Schema(description = "状态: INCOMPLETE/DONE/SHELVED")
     private String status;
 
-    @Schema(description = "优先级: RED/YELLOW/BLUE/FLAG/NONE")
+    @Schema(description = "优先级: Q1/Q2/Q3/Q4/NONE (四象限)")
     private String priority;
 
     @Schema(description = "开始日期-起始")
+    @DateTimeFormat(pattern = "yyyy-MM-dd")
     private LocalDate startDateFrom;
 
     @Schema(description = "开始日期-截止")
+    @DateTimeFormat(pattern = "yyyy-MM-dd")
     private LocalDate startDateTo;
 
     @Schema(description = "截止日期-起始")
+    @DateTimeFormat(pattern = "yyyy-MM-dd")
     private LocalDate dueDateFrom;
 
     @Schema(description = "截止日期-截止")
+    @DateTimeFormat(pattern = "yyyy-MM-dd")
     private LocalDate dueDateTo;
 
     @Schema(description = "搜索关键字")

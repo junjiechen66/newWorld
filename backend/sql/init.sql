@@ -50,7 +50,7 @@ CREATE TABLE IF NOT EXISTS task (
     parent_task_id  BIGINT COMMENT '关联主任务ID',
     title           VARCHAR(200) NOT NULL COMMENT '任务标题',
     description     TEXT COMMENT '任务描述（多文本内容）',
-    priority        VARCHAR(20) DEFAULT 'NONE' COMMENT '优先级: RED/YELLOW/BLUE/FLAG/NONE',
+    priority        VARCHAR(20) DEFAULT 'NONE' COMMENT '优先级: Q1/Q2/Q3/Q4/NONE (四象限)',
     status          VARCHAR(20) DEFAULT 'INCOMPLETE' COMMENT '状态: INCOMPLETE/DONE/SHELVED',
     tag             VARCHAR(100) COMMENT '标签',
     start_date      DATE COMMENT '开始日期',

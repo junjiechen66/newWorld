@@ -32,7 +32,7 @@ public class Task {
     @Schema(description = "任务描述（多文本内容）")
     private String description;
 
-    @Schema(description = "优先级: RED/YELLOW/BLUE/FLAG/NONE")
+    @Schema(description = "优先级: Q1/Q2/Q3/Q4/NONE (四象限: Q1重要且紧急/Q2重要不紧急/Q3不重要但紧急/Q4不重要不紧急)")
     private String priority;
 
     @Schema(description = "状态: INCOMPLETE/DONE/SHELVED")
@@ -60,6 +60,24 @@ public class Task {
     @TableField(fill = FieldFill.INSERT_UPDATE)
     @Schema(description = "更新时间")
     private LocalDateTime updateTime;
+
+    // ---- 共享相关瞬态字段（不映射数据库列） ----
+
+    @TableField(exist = false)
+    @Schema(description = "当前用户访问权限级别: OWNER/EDIT/VIEW")
+    private String accessLevel;
+
+    @TableField(exist = false)
+    @Schema(description = "共享者昵称")
+    private String sharedByNickname;
+
+    @TableField(exist = false)
+    @Schema(description = "共享成员数量")
+    private Integer shareMemberCount;
+
+    @TableField(exist = false)
+    @Schema(description = "是否存在分享链接")
+    private Boolean hasShareLink;
 
     public Long getId() {
         return id;
@@ -180,4 +198,16 @@ public class Task {
     public void setUpdateTime(LocalDateTime updateTime) {
         this.updateTime = updateTime;
     }
+
+    public String getAccessLevel() { return accessLevel; }
+    public void setAccessLevel(String accessLevel) { this.accessLevel = accessLevel; }
+
+    public String getSharedByNickname() { return sharedByNickname; }
+    public void setSharedByNickname(String sharedByNickname) { this.sharedByNickname = sharedByNickname; }
+
+    public Integer getShareMemberCount() { return shareMemberCount; }
+    public void setShareMemberCount(Integer shareMemberCount) { this.shareMemberCount = shareMemberCount; }
+
+    public Boolean getHasShareLink() { return hasShareLink; }
+    public void setHasShareLink(Boolean hasShareLink) { this.hasShareLink = hasShareLink; }
 }

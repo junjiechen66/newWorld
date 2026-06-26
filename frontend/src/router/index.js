@@ -8,6 +8,12 @@ const routes = [
     meta: { requiresAuth: false }
   },
   {
+    path: '/s/:shareCode',
+    name: 'PublicShare',
+    component: () => import('@/views/PublicShareView.vue'),
+    meta: { requiresAuth: false }
+  },
+  {
     path: '/',
     component: () => import('@/layout/MainLayout.vue'),
     meta: { requiresAuth: true },
@@ -20,10 +26,22 @@ const routes = [
         meta: { title: '日历视图' }
       },
       {
+        path: 'today',
+        name: 'Today',
+        component: () => import('@/views/TodayView.vue'),
+        meta: { title: '今日任务' }
+      },
+      {
         path: 'tasks',
         name: 'Tasks',
         component: () => import('@/views/TaskListView.vue'),
         meta: { title: '全部任务' }
+      },
+      {
+        path: 'quadrant',
+        name: 'Quadrant',
+        component: () => import('@/views/QuadrantView.vue'),
+        meta: { title: '四象限' }
       },
       {
         path: 'notes',
@@ -36,6 +54,12 @@ const routes = [
         name: 'Projects',
         component: () => import('@/views/ProjectView.vue'),
         meta: { title: '项目总览' }
+      },
+      {
+        path: 'shared-with-me',
+        name: 'SharedWithMe',
+        component: () => import('@/views/SharedWithMeView.vue'),
+        meta: { title: '共享给我' }
       }
     ]
   }

@@ -134,12 +134,16 @@ html, body, #app {
 }
 
 /* 优先级颜色 - 未完成任务深色背景，已完成任务浅色 */
+.task-priority-q1,
 .task-priority-red,
 .task-priority-high { background: #f5c6c6 !important; color: #333 !important; border-left: 4px solid #F56C6C !important; font-weight: 600 !important; }
+.task-priority-q2,
 .task-priority-yellow,
 .task-priority-medium { background: #fae4b8 !important; color: #333 !important; border-left: 4px solid #E6A23C !important; font-weight: 600 !important; }
+.task-priority-q3,
 .task-priority-blue,
 .task-priority-low { background: #b8d8f7 !important; color: #333 !important; border-left: 4px solid #409EFF !important; font-weight: 600 !important; }
+.task-priority-q4 { background: #c8e6c9 !important; color: #333 !important; border-left: 4px solid #67C23A !important; font-weight: 600 !important; }
 .task-priority-flag { background: #d0e8c8 !important; color: #333 !important; border-left: 4px solid #67C23A !important; font-weight: 600 !important; }
 .task-priority-none { background: #dddde0 !important; color: #333 !important; border-left: 4px solid #b0b0b0 !important; font-weight: 500 !important; }
 .task-status-done { text-decoration: line-through; opacity: 0.55; background: #f0f0f0 !important; color: #999 !important; }
@@ -197,6 +201,30 @@ html, body, #app {
 }
 
 /* ========== 移动端适配 ========== */
+
+/* ========== 共享布局样式 ========== */
+.page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-shrink: 0; }
+.page-header h2 { font-size: 18px; font-weight: 600; margin: 0; }
+.filter-card { margin-bottom: 12px; border-radius: 8px; flex-shrink: 0; }
+.list-status { text-align: center; padding: 60px 0; color: var(--text-secondary); font-size: 14px; }
+.tasks-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+
+/* Priority badges */
+.priority-badge { padding: 1px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; }
+.priority-badge.priority-q1, .priority-badge.priority-red { background: #fef0f0; color: #F56C6C; }
+.priority-badge.priority-q2, .priority-badge.priority-yellow { background: #fdf6ec; color: #E6A23C; }
+.priority-badge.priority-q3, .priority-badge.priority-blue { background: #ecf5ff; color: #409EFF; }
+.priority-badge.priority-q4 { background: #f0f9eb; color: #67C23A; }
+
+/* Color picker */
+.color-picker-group { display: flex; gap: 8px; flex-wrap: wrap; }
+.color-dot { width: 24px; height: 24px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: all 0.15s; }
+.color-dot:hover { transform: scale(1.15); }
+.color-dot.active { border-color: #333; box-shadow: 0 0 0 2px #fff, 0 0 0 4px currentColor; }
+
+/* Task group badge */
+.task-group-badge { background: #ecf5ff; color: #409EFF; padding: 1px 8px; border-radius: 4px; font-size: 11px; }
+
 @media (max-width: 768px) {
   .sidebar { width: 0 !important; min-width: 0 !important; overflow: hidden !important; }
   .sidebar.collapsed { width: 50px !important; min-width: 50px !important; }

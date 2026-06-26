@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.newworld.mapper.ShareMemberMapper">
+
+    <!-- 查询某资源的共享成员列表（含用户昵称/头像） -->
+    <select id="selectMembersWithUser" resultType="java.util.Map">
+        SELECT sm.id, sm.resource_type AS resourceType, sm.resource_id AS resourceId,
+               sm.owner_id AS ownerId, sm.user_id AS userId, sm.permission,
+               sm.create_time AS createTime,
+               u.username, u.nickname, u.avatar
+        FROM share_member sm
+        LEFT JOIN sys_user u ON u.id = sm.user_id
+        WHERE sm.resource_type = #{resourceType}
+          AND sm.resource_id = #{resourceId}
+        ORDER BY sm.create_time ASC
+    </select>
+
+    <!-- 查询"我的 + 被共享的"任务列表 -->
+    <select id="selectTasksWithShare" resultType="java.util.Map">
+        SELECT DISTINCT t.id, t.user_id AS userId, t.project_id AS projectId,
+               t.parent_task_id AS parentTaskId, t.title, t.description,
+               t.priority, t.status, t.tag, t.start_date AS startDate,
+               t.due_date AS dueDate, t.is_note AS isNote, t.sort_order AS sortOrder,
+               t.create_time AS createTime, t.update_time AS updateTime,
+               CASE
+                   WHEN t.user_id = #{userId} THEN 'OWNER'
+                   WHEN COALESCE(sm.permission, sm_project.permission) = 'EDIT' THEN 'EDIT'
+                   WHEN COALESCE(sm.permission, sm_project.permission) = 'VIEW' THEN 'VIEW'
+                   ELSE 'VIEW'
+               END AS accessLevel,
+               CASE
+                   WHEN t.user_id = #{userId} THEN NULL
+                   ELSE (SELECT u.nickname FROM sys_user u WHERE u.id = t.user_id)
+               END AS sharedByNickname,
+               (SELECT COUNT(*) FROM share_member sm2
+                WHERE sm2.resource_type = 'TASK' AND sm2.resource_id = t.id) AS shareMemberCount,
+               (SELECT CASE WHEN COUNT(*) > 0 THEN 1 ELSE 0 END FROM share_link sl2
+                WHERE sl2.resource_type = 'TASK' AND sl2.resource_id = t.id
+                  AND sl2.is_active = 1) AS hasShareLink
+        FROM task t
+        LEFT JOIN share_member sm
+            ON sm.resource_type = 'TASK' AND sm.resource_id = t.id AND sm.user_id = #{userId}
+        LEFT JOIN share_member sm_project
+            ON sm_project.resource_type = 'PROJECT' AND sm_project.resource_id = t.project_id
+               AND sm_project.user_id = #{userId}
+        WHERE (
+            t.user_id = #{userId}
+            OR sm.user_id IS NOT NULL
+            OR sm_project.user_id IS NOT NULL
+        )
+        <if test="isNote != null">
+            AND t.is_note = #{isNote}
+        </if>
+        <if test="projectId != null">
+            AND t.project_id = #{projectId}
+        </if>
+        <if test="status != null and status != ''">
+            AND t.status = #{status}
+        </if>
+        <if test="priority != null and priority != ''">
+            AND t.priority = #{priority}
+        </if>
+        <if test="keyword != null and keyword != ''">
+            AND (t.title LIKE CONCAT('%', #{keyword}, '%')
+                 OR t.description LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+        ORDER BY t.sort_order ASC, t.create_time DESC
+    </select>
+
+</mapper>
