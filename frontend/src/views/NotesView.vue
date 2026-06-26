@@ -101,9 +101,11 @@
         <el-form-item label="内容">
           <MarkdownEditor v-model="createForm.description" :rows="8" start-editing placeholder="笔记内容（支持Markdown）..." />
         </el-form-item>
-        <el-form-item label="分组">
-          <el-select v-model="createForm.projectId" placeholder="选择项目分组" clearable style="width:100%">
-            <el-option v-for="item in projectStore.projectOptions" :key="item.id" :label="item.name" :value="item.id" />
+        <el-form-item label="项目">
+          <el-select v-model="createForm.projectId" placeholder="选择项目" clearable style="width:100%">
+            <el-option-group v-for="group in groupedProjects" :key="group.label" :label="group.label">
+              <el-option v-for="item in group.options" :key="item.id" :label="item.name" :value="item.id" />
+            </el-option-group>
           </el-select>
         </el-form-item>
       </el-form>
@@ -138,6 +140,20 @@ const filterProjectId = ref('')
 
 const pageTitle = computed(() => {
   return route.query.projectId ? (projectStore.projectOptions.find(p => p.id === Number(route.query.projectId))?.name || '全部笔记') : '全部笔记'
+})
+
+// Grouped project options from tree data
+const groupedProjects = computed(() => {
+  const tree = projectStore.treeData
+  if (!tree || !tree.length) {
+    return [{ label: '', options: projectStore.projectOptions }]
+  }
+  return tree.map(group => ({
+    label: group.name,
+    options: (group.children || [])
+      .filter(c => c.type === 'project')
+      .map(p => ({ id: p.id, name: p.name }))
+  })).filter(g => g.options.length > 0)
 })
 
 // Detail panel

@@ -233,7 +233,7 @@ import { getTaskStatistics } from '@/api/task'
 import { createGroup, updateGroup, deleteGroup } from '@/api/group'
 import { createProject, updateProject, deleteProject } from '@/api/project'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { emitRefresh, emitOpenTaskDetail, onRefreshData } from '@/utils/events'
+import { emitRefresh, emitOpenTaskDetail, onRefreshData, onCalendarDateChange } from '@/utils/events'
 import { PRESET_COLORS } from '@/utils/constants'
 import { Calendar, List, EditPen, Collection, FolderOpened, Clock, Grid, Plus, Edit, Delete, Folder, Document, Fold, Share } from '@element-plus/icons-vue'
 
@@ -429,15 +429,20 @@ const handleRefreshData = () => {
 }
 
 let cleanupRefresh = null
+let cleanupCalendarDate = null
 
 onMounted(async () => {
   await projectStore.fetchTree()
   await loadStats()
   cleanupRefresh = onRefreshData(handleRefreshData)
+  cleanupCalendarDate = onCalendarDateChange(async (startDate, endDate) => {
+    await projectStore.fetchTree(startDate, endDate)
+  })
 })
 
 onBeforeUnmount(() => {
   cleanupRefresh?.()
+  cleanupCalendarDate?.()
 })
 </script>
 

@@ -13,6 +13,7 @@ import com.newworld.service.GroupService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -135,5 +136,89 @@ public class GroupServiceImpl implements GroupService {
             throw new BusinessException("分组下存在项目，无法删除");
         }
         groupMapper.deleteById(id);
+    }
+
+    @Override
+    public List<TreeVO> getTree(Long userId, Long projectId, LocalDate startDate, LocalDate endDate) {
+        if (startDate == null || endDate == null) {
+            return getTree(userId, projectId);
+        }
+
+        // 查询该用户所有分组
+        List<Group> groups = getList(userId);
+        // 查询项目
+        List<Project> projects;
+        if (projectId != null) {
+            Project p = projectMapper.selectById(projectId);
+            projects = p != null ? java.util.Collections.singletonList(p) : java.util.Collections.emptyList();
+        } else {
+            projects = projectMapper.selectList(
+                    new LambdaQueryWrapper<Project>()
+                            .eq(Project::getUserId, userId)
+                            .orderByAsc(Project::getSortOrder));
+        }
+
+        // 查询日期范围内的任务（不含笔记）
+        List<Task> tasks = taskMapper.selectList(
+                new LambdaQueryWrapper<Task>()
+                        .eq(Task::getUserId, userId)
+                        .eq(Task::getIsNote, false)
+                        .and(w -> w
+                                .and(inner -> inner
+                                        .le(Task::getStartDate, endDate)
+                                        .and(d -> d.ge(Task::getDueDate, startDate).or().isNull(Task::getDueDate))
+                                )
+                        )
+                        .orderByAsc(Task::getSortOrder));
+
+        // 按项目ID分组任务
+        Map<Long, List<Task>> taskMap = tasks.stream()
+                .collect(Collectors.groupingBy(t -> t.getProjectId() != null ? t.getProjectId() : 0L));
+
+        // 按分组ID分组项目
+        Map<Long, List<Project>> projectMap = projects.stream()
+                .collect(Collectors.groupingBy(Project::getGroupId));
+
+        // 构建树，隐藏无任务的项目
+        List<TreeVO> tree = new ArrayList<>();
+        for (Group group : groups) {
+            TreeVO groupNode = new TreeVO();
+            groupNode.setId(group.getId());
+            groupNode.setName(group.getName());
+            groupNode.setType("group");
+            groupNode.setSortOrder(group.getSortOrder());
+
+            List<TreeVO> projectNodes = new ArrayList<>();
+            List<Project> groupProjects = projectMap.getOrDefault(group.getId(), new ArrayList<>());
+            for (Project project : groupProjects) {
+                List<Task> projectTasks = taskMap.getOrDefault(project.getId(), new ArrayList<>());
+                // 跳过当月无任务的项目
+                if (projectTasks.isEmpty()) continue;
+
+                TreeVO projectNode = new TreeVO();
+                projectNode.setId(project.getId());
+                projectNode.setName(project.getName());
+                projectNode.setType("project");
+                projectNode.setColor(project.getColor());
+                projectNode.setSortOrder(project.getSortOrder());
+
+                List<TreeVO> taskNodes = new ArrayList<>();
+                for (Task task : projectTasks) {
+                    TreeVO taskNode = new TreeVO();
+                    taskNode.setId(task.getId());
+                    taskNode.setName(task.getTitle());
+                    taskNode.setType("task");
+                    taskNode.setPriority(task.getPriority());
+                    taskNode.setStatus(task.getStatus());
+                    taskNode.setSortOrder(task.getSortOrder());
+                    taskNodes.add(taskNode);
+                }
+                projectNode.setChildren(taskNodes);
+                projectNodes.add(projectNode);
+            }
+            groupNode.setChildren(projectNodes);
+            tree.add(groupNode);
+        }
+        return tree;
     }
 }

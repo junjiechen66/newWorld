@@ -8,8 +8,10 @@ import com.newworld.service.GroupService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Tag(name = "分组管理", description = "项目分组 CRUD 及树形结构")
@@ -29,8 +31,14 @@ public class GroupController {
 
     @Operation(summary = "获取树形结构（分组→项目→任务）")
     @GetMapping("/tree")
-    public Result<List<TreeVO>> tree(@RequestParam(required = false) Long projectId) {
+    public Result<List<TreeVO>> tree(
+            @RequestParam(required = false) Long projectId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
         Long userId = AuthInterceptor.getCurrentUserId();
+        if (startDate != null && endDate != null) {
+            return Result.success(groupService.getTree(userId, projectId, startDate, endDate));
+        }
         return Result.success(groupService.getTree(userId, projectId));
     }
 

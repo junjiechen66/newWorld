@@ -11,8 +11,15 @@
         <el-input v-model="form.title" />
       </el-form-item>
       <el-form-item label="日期">
-        <el-date-picker v-model="form.startDate" type="date" placeholder="开始" style="width:48%" value-format="YYYY-MM-DD" />
-        <el-date-picker v-model="form.dueDate" type="date" placeholder="截止" style="width:48%" value-format="YYYY-MM-DD" />
+        <el-date-picker
+          v-model="dateRange"
+          type="daterange"
+          range-separator="至"
+          start-placeholder="开始"
+          end-placeholder="截止"
+          value-format="YYYY-MM-DD"
+          style="width:100%"
+        />
       </el-form-item>
       <el-form-item label="状态">
         <el-radio-group v-model="form.status">
@@ -23,7 +30,9 @@
       </el-form-item>
       <el-form-item label="项目">
         <el-select v-model="form.projectId" placeholder="选择项目" clearable style="width:100%">
-          <el-option v-for="item in projectOptions" :key="item.id" :label="item.name" :value="item.id" />
+          <el-option-group v-for="group in groupedProjects" :key="group.label" :label="group.label">
+            <el-option v-for="item in group.options" :key="item.id" :label="item.name" :value="item.id" />
+          </el-option-group>
         </el-select>
       </el-form-item>
       <el-form-item label="优先级">
@@ -57,9 +66,10 @@
 </template>
 
 <script setup>
-import { reactive, watch } from 'vue'
+import { reactive, computed, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Share } from '@element-plus/icons-vue'
+import { useProjectStore } from '@/stores/project'
 
 const props = defineProps({
   visible: { type: Boolean, default: false },
@@ -71,11 +81,46 @@ const props = defineProps({
 
 const emit = defineEmits(['update:visible', 'save', 'delete', 'share'])
 
+const projectStore = useProjectStore()
+
+// Grouped project options from tree data
+const groupedProjects = computed(() => {
+  const tree = projectStore.treeData
+  if (!tree || !tree.length) {
+    // Fallback to flat list
+    return [{ label: '', options: props.projectOptions }]
+  }
+  return tree.map(group => ({
+    label: group.name,
+    options: (group.children || [])
+      .filter(c => c.type === 'project')
+      .map(p => ({ id: p.id, name: p.name, color: p.color }))
+  })).filter(g => g.options.length > 0)
+})
+
 const defaultForm = () => ({
   title: '', status: 'INCOMPLETE', priority: 'Q1', projectId: null, startDate: null, dueDate: null
 })
 
 const form = reactive(defaultForm())
+
+// Date range computed (syncs with form.startDate / form.dueDate)
+const dateRange = computed({
+  get: () => {
+    if (form.startDate && form.dueDate) return [form.startDate, form.dueDate]
+    if (form.startDate) return [form.startDate, form.startDate]
+    return null
+  },
+  set: (val) => {
+    if (val && val.length === 2) {
+      form.startDate = val[0]
+      form.dueDate = val[1]
+    } else {
+      form.startDate = null
+      form.dueDate = null
+    }
+  }
+})
 
 watch(() => props.visible, (val) => {
   if (val) {

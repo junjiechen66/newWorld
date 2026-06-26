@@ -1,5 +1,6 @@
 <template>
   <div
+    ref="editorRef"
     class="md-editor"
     :class="{
       'md-preview-only': !editable,
@@ -53,7 +54,7 @@
 
     <!-- Fullscreen split-pane mode -->
     <template v-if="isFullscreen">
-      <div class="md-split">
+      <div class="md-split" @click.stop>
         <textarea
           ref="textareaRef"
           :value="modelValue"
@@ -68,10 +69,10 @@
         <div class="md-split-divider"></div>
         <div class="md-preview md-split-right" v-html="renderedHtml"></div>
       </div>
-      <div class="md-fullscreen-bg" @click.self="exitFullscreen"></div>
+      <div class="md-fullscreen-bg" @click="exitFullscreen"></div>
     </template>
 
-    <!-- Normal mode: click-to-edit / blur-to-preview -->
+    <!-- Normal mode: click-to-edit / click-outside-to-preview -->
     <template v-else>
       <!-- Preview area (shown when NOT editing, or readonly) -->
       <div
@@ -88,7 +89,6 @@
         ref="textareaRef"
         :value="modelValue"
         @input="onInput"
-        @blur="exitEdit"
         @keydown.esc.prevent="exitEdit"
         @paste="handlePaste"
         @drop.prevent="handleDrop"
@@ -102,7 +102,7 @@
 </template>
 
 <script setup>
-import { ref, computed, nextTick } from 'vue'
+import { ref, computed, nextTick, onMounted, onBeforeUnmount } from 'vue'
 import { marked } from 'marked'
 import { ElMessage } from 'element-plus'
 import { uploadFile } from '@/api/upload'
@@ -117,6 +117,7 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue'])
 
+const editorRef = ref(null)
 const textareaRef = ref(null)
 const fileInputRef = ref(null)
 const uploading = ref(false)
@@ -142,6 +143,23 @@ const exitEdit = () => {
 const exitFullscreen = () => {
   isFullscreen.value = false
 }
+
+// Click-outside handler: only exit edit when clicking outside the editor container
+const handleDocumentMousedown = (e) => {
+  if (!isEditing.value || isFullscreen.value) return
+  const el = editorRef.value
+  if (el && !el.contains(e.target)) {
+    exitEdit()
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('mousedown', handleDocumentMousedown)
+})
+
+onBeforeUnmount(() => {
+  document.removeEventListener('mousedown', handleDocumentMousedown)
+})
 
 const toggleFullscreen = () => {
   isFullscreen.value = !isFullscreen.value

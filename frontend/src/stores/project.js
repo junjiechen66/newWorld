@@ -8,8 +8,8 @@ export const useProjectStore = defineStore('project', () => {
   const selectedProjectId = ref(null)
   const projectOptions = ref([])
 
-  const fetchTree = async () => {
-    const res = await getTree()
+  const fetchTree = async (startDate, endDate) => {
+    const res = await getTree(null, startDate, endDate)
     treeData.value = res.data
   }
 

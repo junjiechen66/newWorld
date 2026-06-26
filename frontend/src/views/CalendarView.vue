@@ -49,7 +49,7 @@ import {
 } from '@/api/task'
 import TaskEditablePanel from '@/components/task/TaskEditablePanel.vue'
 import TaskEditDialog from '@/components/task/TaskEditDialog.vue'
-import { emitRefresh, onRefreshData } from '@/utils/events'
+import { emitRefresh, emitCalendarDateChange, onRefreshData } from '@/utils/events'
 
 const route = useRoute()
 const appStore = useAppStore()
@@ -135,6 +135,11 @@ const calendarOptions = computed(() => ({
   eventClick: handleEventClick,
   eventDrop: handleEventDrop,
   eventResize: handleEventResize,
+  datesSet: (info) => {
+    const start = dayjs(info.start).format('YYYY-MM-DD')
+    const end = dayjs(info.end).subtract(1, 'day').format('YYYY-MM-DD')
+    emitCalendarDateChange(start, end)
+  },
   eventDidMount: (info) => {
     info.el.addEventListener('contextmenu', (e) => {
       e.preventDefault()
