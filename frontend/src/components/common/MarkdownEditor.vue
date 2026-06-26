@@ -7,6 +7,7 @@
       'md-fullscreen': isFullscreen,
       'md-editing': isEditing
     }"
+    @pointerdown="handleEditorPointerDown"
   >
     <!-- Toolbar -->
     <div v-if="editable && (isEditing || isFullscreen)" class="md-toolbar" @mousedown.prevent>
@@ -146,8 +147,18 @@ const exitFullscreen = () => {
   isFullscreen.value = false
 }
 
+// Pointer capture: when user presses inside editor, capture the pointer
+// so that mouseup/click events stay on the editor instead of leaking to
+// parent overlay (which may close the panel/dialog)
+const handleEditorPointerDown = (e) => {
+  if (isEditing.value && editorRef.value) {
+    try {
+      editorRef.value.setPointerCapture(e.pointerId)
+    } catch (_) { /* ignore if element can't capture */ }
+  }
+}
+
 // Focus restoration: if textarea loses focus while editing, restore it
-// This handles the case where user clicks inside textarea and drags outside
 const handleTextareaFocusOut = (e) => {
   if (!isEditing.value || isFullscreen.value) return
   // If focus moves to another element inside the editor (e.g. toolbar button), don't interfere

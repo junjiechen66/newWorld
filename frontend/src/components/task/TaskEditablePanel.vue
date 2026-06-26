@@ -1,7 +1,7 @@
 <template>
   <Teleport to="body">
     <transition name="panel-slide">
-      <div v-if="visible" class="detail-overlay" @click.self="close">
+      <div v-if="visible" class="detail-overlay" @mousedown.self="overlayMousedown = true" @click.self="handleOverlayClick">
         <div class="detail-panel">
           <div class="panel-header">
             <span v-if="headerType === 'date'" class="panel-date">{{ headerDate }}</span>
@@ -42,6 +42,17 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['update:visible', 'save'])
+
+// Overlay click protection: only close if mousedown was on the overlay itself,
+// not dragged from inside the panel
+const overlayMousedown = ref(false)
+
+const handleOverlayClick = () => {
+  if (overlayMousedown.value) {
+    overlayMousedown.value = false
+    close()
+  }
+}
 
 const editTitle = ref('')
 const editDesc = ref('')
