@@ -123,6 +123,7 @@ const fileInputRef = ref(null)
 const uploading = ref(false)
 const isEditing = ref(props.startEditing)
 const isFullscreen = ref(false)
+const mousedownInside = ref(false)
 
 const onInput = (e) => {
   emit('update:modelValue', e.target.value)
@@ -144,21 +145,31 @@ const exitFullscreen = () => {
   isFullscreen.value = false
 }
 
-// Click-outside handler: only exit edit when clicking outside the editor container
+// Click-outside handler: only exit edit when BOTH mousedown and mouseup are outside the editor
 const handleDocumentMousedown = (e) => {
   if (!isEditing.value || isFullscreen.value) return
   const el = editorRef.value
-  if (el && !el.contains(e.target)) {
+  mousedownInside.value = el && el.contains(e.target)
+}
+
+const handleDocumentMouseup = (e) => {
+  if (!isEditing.value || isFullscreen.value) return
+  const el = editorRef.value
+  const mouseupInside = el && el.contains(e.target)
+  // Only exit if both mousedown and mouseup were outside the editor
+  if (!mousedownInside.value && !mouseupInside) {
     exitEdit()
   }
 }
 
 onMounted(() => {
   document.addEventListener('mousedown', handleDocumentMousedown)
+  document.addEventListener('mouseup', handleDocumentMouseup)
 })
 
 onBeforeUnmount(() => {
   document.removeEventListener('mousedown', handleDocumentMousedown)
+  document.removeEventListener('mouseup', handleDocumentMouseup)
 })
 
 const toggleFullscreen = () => {
@@ -304,6 +315,7 @@ const handleDrop = (e) => {
   border-radius: 6px;
   overflow: visible;
   position: relative;
+  width: 100%;
 }
 .md-editor.md-preview-only {
   border: none;
@@ -390,6 +402,8 @@ const handleDrop = (e) => {
   background: #fff;
   min-height: 60px;
   overflow-y: auto;
+  width: 100%;
+  box-sizing: border-box;
 }
 .md-preview.md-preview-clickable {
   cursor: text;

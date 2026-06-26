@@ -23,6 +23,8 @@
       :mode="editingTask ? 'edit' : 'create'"
       :task="editingTask"
       :projectOptions="projectStore.projectOptions"
+      :initialStartDate="pendingDates.startDate"
+      :initialDueDate="pendingDates.dueDate"
       @save="handleDialogSave"
       @delete="handleDialogDelete"
     />

@@ -76,7 +76,9 @@ const props = defineProps({
   mode: { type: String, default: 'create' }, // 'create' | 'edit'
   task: { type: Object, default: null },
   projectOptions: { type: Array, default: () => [] },
-  showDelete: { type: Boolean, default: true }
+  showDelete: { type: Boolean, default: true },
+  initialStartDate: { type: String, default: null },
+  initialDueDate: { type: String, default: null }
 })
 
 const emit = defineEmits(['update:visible', 'save', 'delete', 'share'])
@@ -134,7 +136,11 @@ watch(() => props.visible, (val) => {
         dueDate: props.task.dueDate
       })
     } else {
-      Object.assign(form, defaultForm())
+      Object.assign(form, {
+        ...defaultForm(),
+        startDate: props.initialStartDate || null,
+        dueDate: props.initialDueDate || null
+      })
     }
   }
 })

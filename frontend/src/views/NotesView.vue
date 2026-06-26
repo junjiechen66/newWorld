@@ -74,9 +74,11 @@
         <el-form-item label="标题">
           <el-input v-model="editForm.title" />
         </el-form-item>
-        <el-form-item label="分组">
-          <el-select v-model="editForm.projectId" placeholder="选择项目分组" clearable style="width:100%">
-            <el-option v-for="item in projectStore.projectOptions" :key="item.id" :label="item.name" :value="item.id" />
+        <el-form-item label="项目">
+          <el-select v-model="editForm.projectId" placeholder="选择项目" clearable style="width:100%">
+            <el-option-group v-for="group in groupedProjects" :key="group.label" :label="group.label">
+              <el-option v-for="item in group.options" :key="item.id" :label="item.name" :value="item.id" />
+            </el-option-group>
           </el-select>
         </el-form-item>
       </el-form>
