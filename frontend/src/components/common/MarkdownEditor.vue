@@ -59,6 +59,7 @@
           ref="textareaRef"
           :value="modelValue"
           @input="onInput"
+          @focusout="handleTextareaFocusOut"
           @keydown.esc.prevent="exitFullscreen"
           @paste="handlePaste"
           @drop.prevent="handleDrop"
@@ -89,6 +90,7 @@
         ref="textareaRef"
         :value="modelValue"
         @input="onInput"
+        @focusout="handleTextareaFocusOut"
         @keydown.esc.prevent="exitEdit"
         @paste="handlePaste"
         @drop.prevent="handleDrop"
@@ -123,7 +125,6 @@ const fileInputRef = ref(null)
 const uploading = ref(false)
 const isEditing = ref(props.startEditing)
 const isFullscreen = ref(false)
-const mousedownInside = ref(false)
 
 const onInput = (e) => {
   emit('update:modelValue', e.target.value)
@@ -145,31 +146,36 @@ const exitFullscreen = () => {
   isFullscreen.value = false
 }
 
-// Click-outside handler: only exit edit when BOTH mousedown and mouseup are outside the editor
+// Focus restoration: if textarea loses focus while editing, restore it
+// This handles the case where user clicks inside textarea and drags outside
+const handleTextareaFocusOut = (e) => {
+  if (!isEditing.value || isFullscreen.value) return
+  // If focus moves to another element inside the editor (e.g. toolbar button), don't interfere
+  const el = editorRef.value
+  if (el && e.relatedTarget && el.contains(e.relatedTarget)) return
+  // Restore focus to textarea so user can keep typing
+  nextTick(() => {
+    if (isEditing.value) {
+      textareaRef.value?.focus()
+    }
+  })
+}
+
+// Click-outside handler: exit edit only on explicit click outside the editor
 const handleDocumentMousedown = (e) => {
   if (!isEditing.value || isFullscreen.value) return
   const el = editorRef.value
-  mousedownInside.value = el && el.contains(e.target)
-}
-
-const handleDocumentMouseup = (e) => {
-  if (!isEditing.value || isFullscreen.value) return
-  const el = editorRef.value
-  const mouseupInside = el && el.contains(e.target)
-  // Only exit if both mousedown and mouseup were outside the editor
-  if (!mousedownInside.value && !mouseupInside) {
+  if (el && !el.contains(e.target)) {
     exitEdit()
   }
 }
 
 onMounted(() => {
   document.addEventListener('mousedown', handleDocumentMousedown)
-  document.addEventListener('mouseup', handleDocumentMouseup)
 })
 
 onBeforeUnmount(() => {
   document.removeEventListener('mousedown', handleDocumentMousedown)
-  document.removeEventListener('mouseup', handleDocumentMouseup)
 })
 
 const toggleFullscreen = () => {

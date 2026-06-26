@@ -226,17 +226,18 @@ html, body, #app {
 .task-group-badge { background: #ecf5ff; color: #409EFF; padding: 1px 8px; border-radius: 4px; font-size: 11px; }
 
 /* el-option-group 分组标题样式 */
-.el-select-dropdown .el-option-group__title {
-  background: #f0f2f5;
-  padding: 6px 20px;
-  font-size: 12px;
-  font-weight: 600;
-  color: #606266;
-  border-bottom: 1px solid #e4e7ed;
+.el-select-dropdown__list .el-select-group__title {
+  background: #e8eaed !important;
+  padding: 8px 20px !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  color: #303133 !important;
+  border-bottom: 1px solid #dcdfe6 !important;
   letter-spacing: 0.5px;
+  line-height: 20px !important;
 }
-.el-select-dropdown .el-option-group .el-option {
-  padding-left: 28px;
+.el-select-dropdown__list .el-select-group .el-select-dropdown__item {
+  padding-left: 28px !important;
 }
 
 @media (max-width: 768px) {

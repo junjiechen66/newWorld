@@ -209,11 +209,8 @@ const openShareDialog = (task) => {
 // Card context menu
 const cardMenu = reactive({ visible: false, x: 0, y: 0, task: null })
 
-const handleCardRightClick = ({ task, x, y }) => {
-  cardMenu.visible = true
-  cardMenu.x = x || 200
-  cardMenu.y = y || 200
-  cardMenu.task = task
+const handleCardRightClick = ({ task }) => {
+  openEditFromCard(task)
 }
 
 const cardMenuEdit = () => {
