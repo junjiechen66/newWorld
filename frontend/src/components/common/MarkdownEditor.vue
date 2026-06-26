@@ -7,8 +7,8 @@
       'md-editing': isEditing
     }"
   >
-    <!-- Toolbar (only in edit mode) -->
-    <div v-if="editable && isEditing" class="md-toolbar" @mousedown.prevent>
+    <!-- Toolbar -->
+    <div v-if="editable && (isEditing || isFullscreen)" class="md-toolbar" @mousedown.prevent>
       <el-tooltip content="粗体" placement="top">
         <el-button text size="small" class="tb-btn" @click="insertMarkdown('bold')"><b>B</b></el-button>
       </el-tooltip>
@@ -51,33 +51,53 @@
       </el-tooltip>
     </div>
 
-    <!-- Preview area (shown when NOT editing, or readonly) -->
-    <div
-      v-if="!isEditing || !editable"
-      class="md-preview"
-      :class="{ 'md-preview-clickable': editable }"
-      @click="enterEdit"
-      v-html="renderedHtml"
-    ></div>
+    <!-- Fullscreen split-pane mode -->
+    <template v-if="isFullscreen">
+      <div class="md-split">
+        <textarea
+          ref="textareaRef"
+          :value="modelValue"
+          @input="onInput"
+          @keydown.esc.prevent="exitFullscreen"
+          @paste="handlePaste"
+          @drop.prevent="handleDrop"
+          @dragover.prevent
+          class="md-textarea md-split-left"
+          :placeholder="placeholder"
+        ></textarea>
+        <div class="md-split-divider"></div>
+        <div class="md-preview md-split-right" v-html="renderedHtml"></div>
+      </div>
+      <div class="md-fullscreen-bg" @click.self="exitFullscreen"></div>
+    </template>
 
-    <!-- Edit area (shown when editing) -->
-    <textarea
-      v-if="editable && isEditing"
-      ref="textareaRef"
-      :value="modelValue"
-      @input="onInput"
-      @blur="exitEdit"
-      @keydown.esc.prevent="exitEdit"
-      @paste="handlePaste"
-      @drop.prevent="handleDrop"
-      @dragover.prevent
-      class="md-textarea"
-      :rows="rows"
-      :placeholder="placeholder"
-    ></textarea>
+    <!-- Normal mode: click-to-edit / blur-to-preview -->
+    <template v-else>
+      <!-- Preview area (shown when NOT editing, or readonly) -->
+      <div
+        v-if="!isEditing || !editable"
+        class="md-preview"
+        :class="{ 'md-preview-clickable': editable }"
+        @click="enterEdit"
+        v-html="renderedHtml"
+      ></div>
 
-    <!-- Fullscreen overlay background -->
-    <div v-if="isFullscreen && isEditing" class="md-fullscreen-bg" @click.self="exitEdit"></div>
+      <!-- Edit area (shown when editing) -->
+      <textarea
+        v-if="editable && isEditing"
+        ref="textareaRef"
+        :value="modelValue"
+        @input="onInput"
+        @blur="exitEdit"
+        @keydown.esc.prevent="exitEdit"
+        @paste="handlePaste"
+        @drop.prevent="handleDrop"
+        @dragover.prevent
+        class="md-textarea"
+        :rows="rows"
+        :placeholder="placeholder"
+      ></textarea>
+    </template>
   </div>
 </template>
 
@@ -116,15 +136,18 @@ const enterEdit = () => {
 }
 
 const exitEdit = () => {
-  // Don't exit if clicking toolbar buttons (handled by stopPropagation in toolbar)
   isEditing.value = false
-  if (isFullscreen.value) {
-    isFullscreen.value = false
-  }
+}
+
+const exitFullscreen = () => {
+  isFullscreen.value = false
 }
 
 const toggleFullscreen = () => {
   isFullscreen.value = !isFullscreen.value
+  if (!isEditing.value) {
+    isEditing.value = true
+  }
   nextTick(() => {
     textareaRef.value?.focus()
   })
@@ -275,12 +298,34 @@ const handleDrop = (e) => {
   border: none;
   display: flex;
   flex-direction: column;
+  background: #fff;
 }
 .md-fullscreen-bg {
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
   z-index: -1;
   background: rgba(0,0,0,0.4);
+}
+.md-split {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+.md-split-left {
+  flex: 1;
+  resize: none !important;
+  min-height: 0;
+  border-right: none;
+}
+.md-split-divider {
+  width: 1px;
+  background: #e4e7ed;
+  flex-shrink: 0;
+}
+.md-split-right {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
 }
 .md-toolbar {
   display: flex;
