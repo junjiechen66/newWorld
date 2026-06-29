@@ -25,5 +25,6 @@ public interface ShareMemberMapper extends BaseMapper<ShareMember> {
                                                     @Param("projectId") Long projectId,
                                                     @Param("status") String status,
                                                     @Param("priority") String priority,
-                                                    @Param("keyword") String keyword);
+                                                    @Param("keyword") String keyword,
+                                                    @Param("archived") Boolean archived);
 }

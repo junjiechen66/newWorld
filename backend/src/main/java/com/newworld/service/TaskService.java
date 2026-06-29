@@ -54,6 +54,16 @@ public interface TaskService {
     Task archive(Long id);
 
     /**
+     * 归档笔记
+     */
+    Task noteArchive(Long id);
+
+    /**
+     * 取消归档笔记
+     */
+    Task noteUnarchive(Long id);
+
+    /**
      * 转换为笔记
      */
     Task convertToNote(Long id);

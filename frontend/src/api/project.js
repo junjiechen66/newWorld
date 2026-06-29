@@ -15,3 +15,7 @@ export function updateProject(id, data) {
 export function deleteProject(id) {
   return request.delete('/projects/' + id)
 }
+
+export function sortProjects(items) {
+  return request.put('/projects/sort', items)
+}

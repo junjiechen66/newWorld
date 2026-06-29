@@ -2,7 +2,11 @@
   <div class="task-card" :class="{ 'completed-card': isCompleted }" @click="$emit('click', task)" @contextmenu.prevent="$emit('right-click', { task, x: $event.clientX, y: $event.clientY })">
     <div class="task-header">
       <h3 class="task-title" :class="{ 'is-done': isCompleted }">{{ task.title || '无标题' }}</h3>
-      <el-icon v-if="task.accessLevel === 'OWNER'" class="share-icon-btn" title="共享设置" @click.stop="$emit('share', task)"><Share /></el-icon>
+      <div class="header-actions">
+        <el-icon v-if="taskType !== 'note'" class="action-icon-btn" :class="{ 'is-completed': isCompleted }" :title="isCompleted ? '已完成' : '标记完成'" @click.stop="$emit('toggle-status', task)"><CircleCheck /></el-icon>
+        <el-icon v-if="taskType === 'note'" class="action-icon-btn" title="归档" @click.stop="$emit('archive', task)"><FolderChecked /></el-icon>
+        <el-icon v-if="task.accessLevel === 'OWNER'" class="action-icon-btn" title="共享" @click.stop="$emit('share', task)"><Share /></el-icon>
+      </div>
     </div>
     <div v-if="showDescription && task.description" class="task-preview">{{ task.description }}</div>
     <div class="task-footer">
@@ -48,7 +52,7 @@
 
 <script setup>
 import { computed } from 'vue'
-import { Calendar, User, Link, Share } from '@element-plus/icons-vue'
+import { Calendar, User, Link, Share, CircleCheck, FolderChecked } from '@element-plus/icons-vue'
 import { useTaskActions } from '@/composables/useTaskActions'
 
 const props = defineProps({
@@ -58,7 +62,7 @@ const props = defineProps({
   taskType: { type: String, default: 'task' } // 'task' | 'note'
 })
 
-defineEmits(['click', 'right-click', 'toggle-status', 'share'])
+defineEmits(['click', 'right-click', 'toggle-status', 'share', 'archive'])
 
 const { statusLabel, statusTagType: getStatusTagType, priorityLabel, priorityShortLabel } = useTaskActions()
 
@@ -87,12 +91,15 @@ const isOverdue = computed(() => {
   display: flex; flex-direction: column;
 }
 .task-card:hover { box-shadow: 0 2px 12px rgba(0,0,0,0.08); border-color: #dcdfe6; }
-.share-icon-btn {
-  display: none; cursor: pointer; color: #909399; font-size: 16px; flex-shrink: 0;
+.action-icon-btn {
+  display: none; cursor: pointer; color: #909399; font-size: 20px; flex-shrink: 0;
   padding: 4px; border-radius: 4px; transition: color 0.15s, background 0.15s;
 }
-.share-icon-btn:hover { color: #409eff; background: #ecf5ff; }
-.task-card:hover .share-icon-btn { display: inline-flex; }
+.action-icon-btn:hover { color: #409eff; background: #ecf5ff; }
+.action-icon-btn.is-completed { color: #67c23a; }
+.action-icon-btn.is-completed:hover { color: #85ce61; background: #f0f9eb; }
+.task-card:hover .action-icon-btn { display: inline-flex; }
+.header-actions { display: flex; gap: 2px; flex-shrink: 0; }
 .completed-card { opacity: 0.7; }
 .task-header { display: flex; align-items: flex-start; margin-bottom: 8px; gap: 8px; }
 .task-title { font-size: 14px; font-weight: 600; margin: 0; flex: 1; line-height: 1.5; word-break: break-word; }

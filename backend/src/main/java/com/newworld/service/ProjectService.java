@@ -1,5 +1,6 @@
 package com.newworld.service;
 
+import com.newworld.dto.SortItem;
 import com.newworld.entity.Project;
 
 import java.util.List;
@@ -25,4 +26,9 @@ public interface ProjectService {
      * 删除项目
      */
     void delete(Long id);
+
+    /**
+     * 批量更新排序
+     */
+    void updateSort(List<SortItem> items);
 }

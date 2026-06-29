@@ -77,5 +77,5 @@ public interface ShareService {
     /**
      * 带共享信息的任务列表查询
      */
-    List<Task> queryTasksWithShare(Long userId, Boolean isNote, Long projectId, String status, String priority, String keyword);
+    List<Task> queryTasksWithShare(Long userId, Boolean isNote, Long projectId, String status, String priority, String keyword, Boolean archived);
 }

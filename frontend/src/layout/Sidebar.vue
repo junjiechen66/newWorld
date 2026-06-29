@@ -268,11 +268,21 @@ const filteredTreeData = computed(() => {
   const filterTree = (nodes) => {
     if (!nodes) return nodes
     return nodes.map(node => {
-      if (node.children) {
+      if (node.type === 'group') {
+        // Filter children (projects)
         const filteredChildren = filterTree(node.children)
+        // Hide group if it has no visible projects
+        if (!filteredChildren || filteredChildren.length === 0) return null
         return { ...node, children: filteredChildren }
       }
-      // For task-type children, filter out DONE when showCompleted is false
+      if (node.type === 'project') {
+        // Filter children (tasks)
+        const filteredChildren = filterTree(node.children)
+        // Hide project if it has no visible tasks
+        if (!filteredChildren || filteredChildren.length === 0) return null
+        return { ...node, children: filteredChildren }
+      }
+      // Task node: hide DONE/SHELVED when showCompleted is false
       if (node.type === 'task' && !appStore.showCompleted && (node.status === 'DONE' || node.status === 'SHELVED')) {
         return null
       }

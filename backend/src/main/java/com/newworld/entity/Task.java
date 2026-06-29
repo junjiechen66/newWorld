@@ -50,6 +50,9 @@ public class Task {
     @Schema(description = "是否为笔记: 0-任务, 1-笔记")
     private Boolean isNote;
 
+    @Schema(description = "是否归档")
+    private Boolean archived;
+
     @Schema(description = "排序号")
     private Integer sortOrder;
 
@@ -173,6 +176,14 @@ public class Task {
 
     public void setIsNote(Boolean isNote) {
         this.isNote = isNote;
+    }
+
+    public Boolean getArchived() {
+        return archived;
+    }
+
+    public void setArchived(Boolean archived) {
+        this.archived = archived;
     }
 
     public Integer getSortOrder() {

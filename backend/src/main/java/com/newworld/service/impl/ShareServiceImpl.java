@@ -359,9 +359,9 @@ public class ShareServiceImpl implements ShareService {
 
     @Override
     public List<Task> queryTasksWithShare(Long userId, Boolean isNote, Long projectId,
-                                          String status, String priority, String keyword) {
+                                          String status, String priority, String keyword, Boolean archived) {
         List<Map<String, Object>> rows = shareMemberMapper.selectTasksWithShare(
-                userId, isNote, projectId, status, priority, keyword);
+                userId, isNote, projectId, status, priority, keyword, archived);
         List<Task> result = new ArrayList<>();
         for (Map<String, Object> row : rows) {
             Task task = new Task();
@@ -386,6 +386,8 @@ public class ShareServiceImpl implements ShareService {
             }
             Object isNoteVal = row.get("isNote");
             task.setIsNote(isNoteVal != null && toBool(isNoteVal));
+            Object archivedVal = row.get("archived");
+            task.setArchived(archivedVal != null && toBool(archivedVal));
             Object so = row.get("sortOrder");
             task.setSortOrder(so != null ? ((Number) so).intValue() : 0);
             Object ct = row.get("createTime");

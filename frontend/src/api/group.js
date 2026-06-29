@@ -23,3 +23,7 @@ export function updateGroup(id, data) {
 export function deleteGroup(id) {
   return request.delete('/groups/' + id)
 }
+
+export function sortGroups(items) {
+  return request.put('/groups/sort', items)
+}

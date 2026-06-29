@@ -35,3 +35,11 @@ export function getTaskStatistics() {
 export function getTodayTasks() {
   return request.get('/tasks/today')
 }
+
+export function noteArchiveTask(id) {
+  return request.put('/tasks/' + id + '/note-archive')
+}
+
+export function noteUnarchiveTask(id) {
+  return request.put('/tasks/' + id + '/note-unarchive')
+}

@@ -2,13 +2,27 @@
   <div class="project-view">
     <div class="page-header">
       <h2>项目总览</h2>
-      <el-button type="primary" size="small" @click="showAddProject = true">
-        <el-icon><Plus /></el-icon> 新建项目
-      </el-button>
+      <div class="header-actions">
+        <el-button size="small" @click="showAddGroup = true">
+          <el-icon><Plus /></el-icon> 项目分组
+        </el-button>
+        <el-button type="primary" size="small" @click="showAddProject = true">
+          <el-icon><Plus /></el-icon> 新建项目
+        </el-button>
+      </div>
     </div>
 
     <el-row :gutter="16">
-      <el-col v-for="group in projectStore.treeData" :key="group.id" :span="24" style="margin-bottom: 16px;">
+      <el-col v-for="(group, groupIndex) in projectStore.treeData" :key="group.id" :span="24" style="margin-bottom: 16px;"
+        draggable="true"
+        @dragstart="onGroupDragStart($event, groupIndex)"
+        @dragover.prevent="onGroupDragOver($event, groupIndex)"
+        @dragenter="groupDragOverIndex = groupIndex"
+        @dragleave="groupDragOverIndex = null"
+        @drop="onGroupDrop($event, groupIndex)"
+        @dragend="groupDragOverIndex = null"
+        :class="{ 'drag-over': groupDragOverIndex === groupIndex }"
+      >
         <el-card shadow="never" class="group-card">
           <template #header>
             <div class="group-header">
@@ -16,7 +30,16 @@
             </div>
           </template>
           <el-row :gutter="12">
-            <el-col v-for="project in group.children" :key="project.id" :span="8" style="margin-bottom: 12px;">
+            <el-col v-for="(project, projIndex) in group.children" :key="project.id" :span="8" style="margin-bottom: 12px;"
+              draggable="true"
+              @dragstart.stop="onProjectDragStart($event, group.id, projIndex)"
+              @dragover.prevent.stop="onProjectDragOver($event, projIndex)"
+              @dragenter.stop="projectDragOverIndex = projIndex"
+              @dragleave.stop="projectDragOverIndex = null"
+              @drop.stop="onProjectDrop($event, group.id, projIndex)"
+              @dragend.stop="projectDragOverIndex = null"
+              :class="{ 'drag-over': projectDragOverIndex === projIndex }"
+            >
               <el-card shadow="hover" class="project-card" @click="router.push('/calendar?projectId=' + project.id)" @contextmenu.prevent="openEditProject(project)">
                 <div class="project-card-header">
                   <el-tag :color="project.color || '#409EFF'" class="project-color-tag" />
@@ -36,6 +59,19 @@
         </el-card>
       </el-col>
     </el-row>
+
+    <!-- Add Group Dialog -->
+    <el-dialog v-model="showAddGroup" title="新建项目分组" width="400px">
+      <el-form :model="groupForm" label-width="80px" size="small" @keyup.enter="submitGroup" @submit.prevent>
+        <el-form-item label="分组名称">
+          <el-input v-model="groupForm.name" placeholder="请输入分组名称" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="showAddGroup = false">取消</el-button>
+        <el-button type="primary" @click="submitGroup">确定</el-button>
+      </template>
+    </el-dialog>
 
     <!-- Add Project Dialog -->
     <el-dialog v-model="showAddProject" title="新建项目" width="450px">
@@ -109,14 +145,106 @@
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useProjectStore } from '@/stores/project'
-import { createProject, updateProject } from '@/api/project'
+import { createProject, updateProject, sortProjects } from '@/api/project'
+import { createGroup, sortGroups } from '@/api/group'
 import { ElMessage } from 'element-plus'
+import { Plus, Folder } from '@element-plus/icons-vue'
 import { PRESET_COLORS } from '@/utils/constants'
 
 const router = useRouter()
 const projectStore = useProjectStore()
 
 const presetColors = PRESET_COLORS
+
+// Drag sort state
+const groupDragIndex = ref(null)
+const groupDragOverIndex = ref(null)
+const projectDragGroupId = ref(null)
+const projectDragIndex = ref(null)
+const projectDragOverIndex = ref(null)
+
+const onGroupDragStart = (e, index) => {
+  groupDragIndex.value = index
+  e.dataTransfer.effectAllowed = 'move'
+  e.dataTransfer.setData('text/plain', 'group')
+}
+
+const onGroupDragOver = (e, index) => {
+  groupDragOverIndex.value = index
+}
+
+const onGroupDrop = async (e, dropIndex) => {
+  e.preventDefault()
+  const dragIndex = groupDragIndex.value
+  if (dragIndex === null || dragIndex === dropIndex) return
+  const treeData = projectStore.treeData
+  const items = [...treeData]
+  const [moved] = items.splice(dragIndex, 1)
+  items.splice(dropIndex, 0, moved)
+  projectStore.treeData = items
+  groupDragIndex.value = null
+  groupDragOverIndex.value = null
+  // Save sort order
+  const sortItems = items.map((g, i) => ({ id: g.id, sortOrder: i }))
+  try {
+    await sortGroups(sortItems)
+  } catch (err) {
+    ElMessage.error('排序失败')
+  }
+}
+
+const onProjectDragStart = (e, groupId, index) => {
+  projectDragGroupId.value = groupId
+  projectDragIndex.value = index
+  e.dataTransfer.effectAllowed = 'move'
+  e.dataTransfer.setData('text/plain', 'project')
+}
+
+const onProjectDragOver = (e, index) => {
+  projectDragOverIndex.value = index
+}
+
+const onProjectDrop = async (e, groupId, dropIndex) => {
+  e.preventDefault()
+  e.stopPropagation()
+  const dragIndex = projectDragIndex.value
+  const dragGroupId = projectDragGroupId.value
+  if (dragGroupId !== groupId || dragIndex === null || dragIndex === dropIndex) return
+  const group = projectStore.treeData.find(g => g.id === groupId)
+  if (!group || !group.children) return
+  const items = [...group.children]
+  const [moved] = items.splice(dragIndex, 1)
+  items.splice(dropIndex, 0, moved)
+  group.children = items
+  projectDragIndex.value = null
+  projectDragOverIndex.value = null
+  projectDragGroupId.value = null
+  // Save sort order
+  const sortItems = items.map((p, i) => ({ id: p.id, sortOrder: i }))
+  try {
+    await sortProjects(sortItems)
+  } catch (err) {
+    ElMessage.error('排序失败')
+  }
+}
+
+// Add Group
+const showAddGroup = ref(false)
+const groupForm = reactive({ name: '' })
+
+const submitGroup = async () => {
+  if (!groupForm.name.trim()) {
+    ElMessage.warning('请输入分组名称')
+    return
+  }
+  try {
+    await createGroup({ ...groupForm })
+    ElMessage.success('分组创建成功')
+    showAddGroup.value = false
+    groupForm.name = ''
+    await projectStore.fetchTree()
+  } catch (e) {}
+}
 
 const showAddProject = ref(false)
 const projectForm = reactive({
@@ -199,10 +327,12 @@ onMounted(async () => {
 
 <style scoped>
 .project-view { padding: 16px; }
+.header-actions { display: flex; gap: 8px; }
 .group-card { border-radius: 8px; }
 .group-header { font-size: 15px; font-weight: 500; display: flex; align-items: center; gap: 8px; }
 .project-card { cursor: pointer; border-radius: 6px; transition: transform 0.15s; }
 .project-card:hover { transform: translateY(-2px); }
+.drag-over { opacity: 0.6; }
 .project-card-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
 .project-color-tag { width: 12px; height: 12px; border-radius: 3px; padding: 0; border: none; }
 .project-name { font-size: 14px; font-weight: 500; }

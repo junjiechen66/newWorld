@@ -24,7 +24,7 @@ public interface AuthService {
     /**
      * 修改用户信息
      */
-    void updateUserInfo(Long userId, String nickname);
+    void updateUserInfo(Long userId, String nickname, String avatar);
 
     /**
      * 修改密码

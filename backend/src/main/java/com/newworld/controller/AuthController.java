@@ -52,7 +52,7 @@ public class AuthController {
     @PutMapping("/user-info")
     public Result<Void> updateUserInfo(@RequestBody UpdateUserRequest request) {
         Long userId = AuthInterceptor.getCurrentUserId();
-        authService.updateUserInfo(userId, request.getNickname());
+        authService.updateUserInfo(userId, request.getNickname(), request.getAvatar());
         return Result.success("修改成功");
     }
 

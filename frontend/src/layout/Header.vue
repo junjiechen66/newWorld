@@ -19,7 +19,7 @@
       </el-button>
       <el-dropdown @command="handleCommand">
         <span class="user-info">
-          <el-avatar :size="28">{{ authStore.user?.nickname?.[0] || 'U' }}</el-avatar>
+          <el-avatar :size="28" :src="authStore.user?.avatar">{{ authStore.user?.nickname?.[0] || 'U' }}</el-avatar>
           <span class="username">{{ authStore.user?.nickname || '用户' }}</span>
         </span>
         <template #dropdown>
@@ -35,6 +35,18 @@
     <!-- User Info Dialog -->
     <el-dialog v-model="userInfoVisible" title="个人信息" width="400px">
       <el-form :model="userForm" label-width="80px">
+        <el-form-item label="头像">
+          <div class="avatar-section">
+            <el-avatar :size="64" :src="userForm.avatar || authStore.user?.avatar">{{ authStore.user?.nickname?.[0] || 'U' }}</el-avatar>
+            <el-upload
+              :show-file-list="false"
+              :http-request="handleAvatarUpload"
+              accept="image/*"
+            >
+              <el-button size="small">更换头像</el-button>
+            </el-upload>
+          </div>
+        </el-form-item>
         <el-form-item label="用户名">
           <el-input v-model="userForm.username" disabled />
         </el-form-item>
@@ -74,6 +86,7 @@ import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { updateUserInfo, changePassword } from '@/api/auth'
+import { uploadFile } from '@/api/upload'
 import { List, EditPen, Calendar, Collection } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 
@@ -81,7 +94,7 @@ const router = useRouter()
 const authStore = useAuthStore()
 
 const userInfoVisible = ref(false)
-const userForm = reactive({ username: '', nickname: '' })
+const userForm = reactive({ username: '', nickname: '', avatar: '' })
 
 const pwdVisible = ref(false)
 const pwdForm = reactive({ oldPassword: '', newPassword: '', confirmPassword: '' })
@@ -90,6 +103,7 @@ const handleCommand = (cmd) => {
   if (cmd === 'info') {
     userForm.username = authStore.user?.username || ''
     userForm.nickname = authStore.user?.nickname || ''
+    userForm.avatar = authStore.user?.avatar || ''
     userInfoVisible.value = true
   } else if (cmd === 'password') {
     pwdForm.oldPassword = ''
@@ -102,9 +116,19 @@ const handleCommand = (cmd) => {
   }
 }
 
+const handleAvatarUpload = async (options) => {
+  try {
+    const res = await uploadFile(options.file)
+    userForm.avatar = res.data.url
+    ElMessage.success('头像上传成功')
+  } catch (e) {
+    ElMessage.error('头像上传失败')
+  }
+}
+
 const submitUserInfo = async () => {
   try {
-    await updateUserInfo({ nickname: userForm.nickname })
+    await updateUserInfo({ nickname: userForm.nickname, avatar: userForm.avatar })
     ElMessage.success('修改成功')
     userInfoVisible.value = false
     await authStore.fetchUserInfo()
@@ -148,4 +172,5 @@ const submitPassword = async () => {
 .header-right { display: flex; align-items: center; gap: 8px; }
 .user-info { display: flex; align-items: center; gap: 8px; cursor: pointer; }
 .username { font-size: 13px; color: var(--text-regular); }
+.avatar-section { display: flex; align-items: center; gap: 16px; }
 </style>

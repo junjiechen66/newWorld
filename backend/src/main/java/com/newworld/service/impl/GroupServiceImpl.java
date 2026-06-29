@@ -2,6 +2,7 @@ package com.newworld.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.newworld.common.exception.BusinessException;
+import com.newworld.dto.SortItem;
 import com.newworld.dto.TreeVO;
 import com.newworld.entity.Group;
 import com.newworld.entity.Project;
@@ -136,6 +137,16 @@ public class GroupServiceImpl implements GroupService {
             throw new BusinessException("分组下存在项目，无法删除");
         }
         groupMapper.deleteById(id);
+    }
+
+    @Override
+    public void updateSort(List<SortItem> items) {
+        for (SortItem item : items) {
+            Group group = new Group();
+            group.setId(item.getId());
+            group.setSortOrder(item.getSortOrder());
+            groupMapper.updateById(group);
+        }
     }
 
     @Override

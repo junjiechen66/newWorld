@@ -11,6 +11,8 @@ import com.newworld.service.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+
 @Service
 public class AuthServiceImpl implements AuthService {
 
@@ -52,18 +54,25 @@ public class AuthServiceImpl implements AuthService {
             throw new BusinessException("用户名或密码错误");
         }
 
+        // 更新最近登录时间
+        user.setLastLoginTime(LocalDateTime.now());
+        userMapper.updateById(user);
+
         // 生成 Token
         return jwtUtil.generateToken(user.getId(), user.getUsername());
     }
 
     @Override
-    public void updateUserInfo(Long userId, String nickname) {
+    public void updateUserInfo(Long userId, String nickname, String avatar) {
         User user = userMapper.selectById(userId);
         if (user == null) {
             throw new BusinessException("用户不存在");
         }
         if (nickname != null && !nickname.trim().isEmpty()) {
             user.setNickname(nickname);
+        }
+        if (avatar != null) {
+            user.setAvatar(avatar);
         }
         userMapper.updateById(user);
     }

@@ -1,6 +1,7 @@
 package com.newworld.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.newworld.dto.SortItem;
 import com.newworld.common.exception.BusinessException;
 import com.newworld.entity.Project;
 import com.newworld.entity.Task;
@@ -55,5 +56,15 @@ public class ProjectServiceImpl implements ProjectService {
             throw new BusinessException("项目下存在任务，无法删除");
         }
         projectMapper.deleteById(id);
+    }
+
+    @Override
+    public void updateSort(List<SortItem> items) {
+        for (SortItem item : items) {
+            Project project = new Project();
+            project.setId(item.getId());
+            project.setSortOrder(item.getSortOrder());
+            projectMapper.updateById(project);
+        }
     }
 }

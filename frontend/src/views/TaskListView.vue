@@ -32,7 +32,9 @@
         </el-form-item>
         <el-form-item>
           <el-select v-model="filters.projectId" placeholder="项目" clearable style="width:130px" @change="loadTaskList">
-            <el-option v-for="item in projectStore.projectOptions" :key="item.id" :label="item.name" :value="item.id" />
+            <el-option-group v-for="group in groupedProjects" :key="group.label" :label="group.label">
+              <el-option v-for="item in group.options" :key="item.id" :label="item.name" :value="item.id" />
+            </el-option-group>
           </el-select>
         </el-form-item>
         <el-form-item>
@@ -50,6 +52,7 @@
         </el-form-item>
         <el-form-item>
           <el-button @click="loadTaskList">搜索</el-button>
+          <el-button @click="resetFilters">重置</el-button>
           <el-button type="success" @click="showExportDialog">导出</el-button>
         </el-form-item>
       </el-form>
@@ -80,14 +83,6 @@
         </div>
       </div>
     </div>
-
-    <!-- Card Context Menu -->
-    <Teleport to="body">
-      <div v-show="cardMenu.visible" class="context-menu" :style="{ left: cardMenu.x + 'px', top: cardMenu.y + 'px' }" @click.stop>
-        <div class="menu-item" v-if="cardMenu.task?.accessLevel === 'OWNER' || cardMenu.task?.accessLevel === 'EDIT'" @click="cardMenuEdit"><el-icon><Edit /></el-icon> 编辑信息</div>
-        <div class="menu-item" v-if="cardMenu.task?.accessLevel === 'OWNER'" @click="cardMenuShare"><el-icon><Share /></el-icon> 共享设置</div>
-      </div>
-    </Teleport>
 
     <!-- Shared Editable Panel -->
     <TaskEditablePanel
@@ -158,7 +153,7 @@ import { useRoute } from 'vue-router'
 import { getTaskList, createTask, updateTask, deleteTask } from '@/api/task'
 import { useProjectStore } from '@/stores/project'
 import { useTaskActions } from '@/composables/useTaskActions'
-import { Search, Plus, Loading, Edit, Share } from '@element-plus/icons-vue'
+import { Search, Plus, Loading } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import TaskEditDialog from '@/components/task/TaskEditDialog.vue'
 import TaskEditablePanel from '@/components/task/TaskEditablePanel.vue'
@@ -186,6 +181,29 @@ const filters = reactive({
   keyword: '', status: '', priority: '', projectId: '', dueDateRange: null
 })
 
+const resetFilters = () => {
+  filters.keyword = ''
+  filters.status = ''
+  filters.priority = ''
+  filters.projectId = ''
+  filters.dueDateRange = null
+  loadTaskList()
+}
+
+// Grouped project options from tree data
+const groupedProjects = computed(() => {
+  const tree = projectStore.treeData
+  if (!tree || !tree.length) {
+    return [{ label: '', options: projectStore.projectOptions }]
+  }
+  return tree.map(group => ({
+    label: group.name,
+    options: (group.children || [])
+      .filter(c => c.type === 'project')
+      .map(p => ({ id: p.id, name: p.name }))
+  })).filter(g => g.options.length > 0)
+})
+
 // Detail panel
 const detailVisible = ref(false)
 const viewTask = ref(null)
@@ -206,24 +224,9 @@ const openShareDialog = (task) => {
   shareDialogVisible.value = true
 }
 
-// Card context menu
-const cardMenu = reactive({ visible: false, x: 0, y: 0, task: null })
-
 const handleCardRightClick = ({ task }) => {
   openEditFromCard(task)
 }
-
-const cardMenuEdit = () => {
-  cardMenu.visible = false
-  if (cardMenu.task) openEditFromCard(cardMenu.task)
-}
-
-const cardMenuShare = () => {
-  cardMenu.visible = false
-  if (cardMenu.task) openShareDialog(cardMenu.task)
-}
-
-document.addEventListener('click', () => { cardMenu.visible = false })
 
 const groupedTasks = computed(() => {
   const map = {}
@@ -471,16 +474,4 @@ onBeforeUnmount(() => {
   background: #ecf5ff; color: #409EFF; padding: 1px 8px;
   border-radius: 10px; font-size: 12px; font-weight: 500;
 }
-.context-menu {
-  position: fixed; z-index: 2000; background: #fff;
-  border: 1px solid #e4e7ed; border-radius: 6px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-  padding: 4px 0; min-width: 140px;
-}
-.menu-item {
-  display: flex; align-items: center; gap: 6px;
-  padding: 6px 14px; font-size: 13px; cursor: pointer;
-  color: #606266;
-}
-.menu-item:hover { background: #f5f7fa; color: #409eff; }
 </style>

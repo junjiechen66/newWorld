@@ -21,7 +21,7 @@
         SELECT DISTINCT t.id, t.user_id AS userId, t.project_id AS projectId,
                t.parent_task_id AS parentTaskId, t.title, t.description,
                t.priority, t.status, t.tag, t.start_date AS startDate,
-               t.due_date AS dueDate, t.is_note AS isNote, t.sort_order AS sortOrder,
+               t.due_date AS dueDate, t.is_note AS isNote, t.archived, t.sort_order AS sortOrder,
                t.create_time AS createTime, t.update_time AS updateTime,
                CASE
                    WHEN t.user_id = #{userId} THEN 'OWNER'
@@ -60,6 +60,9 @@
         </if>
         <if test="priority != null and priority != ''">
             AND t.priority = #{priority}
+        </if>
+        <if test="archived != null">
+            AND (t.archived = #{archived} OR (t.archived IS NULL AND #{archived} = 0))
         </if>
         <if test="keyword != null and keyword != ''">
             AND (t.title LIKE CONCAT('%', #{keyword}, '%')

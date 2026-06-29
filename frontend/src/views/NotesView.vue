@@ -17,29 +17,47 @@
         </el-form-item>
         <el-form-item>
           <el-select v-model="filterProjectId" placeholder="项目" clearable style="width:130px" @change="loadNotes">
-            <el-option v-for="item in projectStore.projectOptions" :key="item.id" :label="item.name" :value="item.id" />
+            <el-option-group v-for="group in groupedProjects" :key="group.label" :label="group.label">
+              <el-option v-for="item in group.options" :key="item.id" :label="item.name" :value="item.id" />
+            </el-option-group>
+          </el-select>
+        </el-form-item>
+        <el-form-item>
+          <el-select v-model="filterArchived" placeholder="归档" clearable style="width:110px" @change="loadNotes">
+            <el-option label="未归档" :value="false" />
+            <el-option label="已归档" :value="true" />
           </el-select>
         </el-form-item>
         <el-form-item>
           <el-button @click="loadNotes">搜索</el-button>
+          <el-button @click="resetFilters">重置</el-button>
         </el-form-item>
       </el-form>
     </el-card>
 
-    <!-- Notes Grid -->
+    <!-- Notes Grid grouped by project -->
     <div class="notes-scroll">
       <div v-if="loading" class="list-status"><el-icon class="is-loading"><Loading /></el-icon> 加载中...</div>
       <div v-else-if="notes.length === 0" class="list-status empty">暂无笔记</div>
-      <div v-else class="tasks-grid">
-        <TaskCard
-          v-for="note in notes" :key="note.id"
-          :task="note"
-          :showDescription="true"
-          taskType="note"
-          @click="openDetail"
-          @right-click="handleCardRightClick"
-          @share="handleCardShare"
-        />
+      <div v-else>
+        <div v-for="group in groupedNotes" :key="group.projectId" class="project-section">
+          <div class="project-section-header">
+            <span class="project-section-name">{{ group.projectName }}</span>
+            <span class="project-section-count">{{ group.notes.length }}</span>
+          </div>
+          <div class="tasks-grid">
+            <TaskCard
+              v-for="note in group.notes" :key="note.id"
+              :task="note"
+              :showDescription="true"
+              taskType="note"
+              @click="openDetail"
+              @right-click="openEditDialog"
+              @share="handleCardShare"
+              @archive="handleCardArchive"
+            />
+          </div>
+        </div>
       </div>
     </div>
 
@@ -52,14 +70,6 @@
       :readonly="viewNote?.accessLevel === 'VIEW'"
       @save="handleSaveDesc"
     />
-
-    <!-- Note Context Menu -->
-    <Teleport to="body">
-      <div v-show="cardMenu.visible" class="context-menu" :style="{ left: cardMenu.x + 'px', top: cardMenu.y + 'px' }" @click.stop>
-        <div class="menu-item" v-if="cardMenu.note?.accessLevel === 'OWNER' || cardMenu.note?.accessLevel === 'EDIT'" @click="cardMenuEdit"><el-icon><Edit /></el-icon> 编辑信息</div>
-        <div class="menu-item" v-if="cardMenu.note?.accessLevel === 'OWNER'" @click="cardMenuShare"><el-icon><Share /></el-icon> 共享设置</div>
-      </div>
-    </Teleport>
 
     <!-- Share Dialog -->
     <ShareDialog
@@ -86,6 +96,8 @@
         <div class="dialog-footer">
           <el-button size="small" type="danger" plain @click="deleteEditNote">删除</el-button>
           <el-button size="small" @click="openShareFromEdit"><el-icon><Share /></el-icon> 共享</el-button>
+          <el-button size="small" v-if="!editNoteRef?.archived" @click="archiveEditNote"><el-icon><FolderChecked /></el-icon> 归档</el-button>
+          <el-button size="small" v-if="editNoteRef?.archived" @click="unarchiveEditNote"><el-icon><FolderOpened /></el-icon> 取消归档</el-button>
           <div class="dialog-footer-right">
             <el-button size="small" @click="editing = false">取消</el-button>
             <el-button size="small" type="primary" @click="saveEdit">保存</el-button>
@@ -122,9 +134,9 @@
 <script setup>
 import { ref, reactive, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { getTaskList, createTask, updateTask, deleteTask } from '@/api/task'
+import { getTaskList, createTask, updateTask, deleteTask, noteArchiveTask, noteUnarchiveTask } from '@/api/task'
 import { useProjectStore } from '@/stores/project'
-import { Search, Plus, Loading, Edit, Share } from '@element-plus/icons-vue'
+import { Search, Plus, Loading, Share, FolderChecked, FolderOpened } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import MarkdownEditor from '@/components/common/MarkdownEditor.vue'
 import TaskEditablePanel from '@/components/task/TaskEditablePanel.vue'
@@ -139,6 +151,7 @@ const loading = ref(false)
 const notes = ref([])
 const searchKeyword = ref('')
 const filterProjectId = ref('')
+const filterArchived = ref(false)
 
 const pageTitle = computed(() => {
   return route.query.projectId ? (projectStore.projectOptions.find(p => p.id === Number(route.query.projectId))?.name || '全部笔记') : '全部笔记'
@@ -158,13 +171,27 @@ const groupedProjects = computed(() => {
   })).filter(g => g.options.length > 0)
 })
 
+const groupedNotes = computed(() => {
+  const map = {}
+  const order = []
+  notes.value.forEach(n => {
+    const key = n.projectId || '_none'
+    if (!map[key]) {
+      map[key] = { projectId: n.projectId, projectName: n.projectName || '未分配项目', notes: [] }
+      order.push(key)
+    }
+    map[key].notes.push(n)
+  })
+  return order.map(k => map[k])
+})
+
 // Detail panel
 const detailVisible = ref(false)
 const viewNote = ref(null)
 
 // Edit
 const editing = ref(false)
-const editForm = reactive({ title: '', projectId: null })
+const editForm = reactive({ title: '', description: '', projectId: null })
 const editNoteRef = ref(null)
 
 // Create
@@ -175,29 +202,41 @@ const createForm = reactive({ title: '', description: '', projectId: null })
 const shareDialogVisible = ref(false)
 const shareResource = ref(null)
 
-// Card context menu
-const cardMenu = reactive({ visible: false, x: 0, y: 0, note: null })
-
-const handleCardRightClick = ({ task }) => {
-  openEditDialog(task)
-}
-
-const cardMenuEdit = () => {
-  cardMenu.visible = false
-  if (cardMenu.note) openEditDialog(cardMenu.note)
-}
-
-const cardMenuShare = () => {
-  cardMenu.visible = false
-  if (cardMenu.note) {
-    shareResource.value = cardMenu.note
-    shareDialogVisible.value = true
-  }
-}
-
 const handleCardShare = (task) => {
   shareResource.value = task
   shareDialogVisible.value = true
+}
+
+const archiveEditNote = async () => {
+  const note = editNoteRef.value
+  if (!note) return
+  try {
+    await noteArchiveTask(note.id)
+    ElMessage.success('已归档')
+    editing.value = false
+    editNoteRef.value = null
+    await loadNotes()
+  } catch (e) {}
+}
+
+const unarchiveEditNote = async () => {
+  const note = editNoteRef.value
+  if (!note) return
+  try {
+    await noteUnarchiveTask(note.id)
+    ElMessage.success('已取消归档')
+    editing.value = false
+    editNoteRef.value = null
+    await loadNotes()
+  } catch (e) {}
+}
+
+const handleCardArchive = async (note) => {
+  try {
+    await noteArchiveTask(note.id)
+    ElMessage.success('已归档')
+    await loadNotes()
+  } catch (e) {}
 }
 
 const openShareFromEdit = () => {
@@ -208,12 +247,20 @@ const openShareFromEdit = () => {
   }
 }
 
-document.addEventListener('click', () => { cardMenu.visible = false })
+const resetFilters = () => {
+  searchKeyword.value = ''
+  filterProjectId.value = ''
+  filterArchived.value = null
+  loadNotes()
+}
 
 const loadNotes = async () => {
   loading.value = true
   try {
     const params = { isNote: true }
+    if (filterArchived.value !== null && filterArchived.value !== '' && filterArchived.value !== undefined) {
+      params.archived = filterArchived.value
+    }
     if (searchKeyword.value.trim()) params.keyword = searchKeyword.value.trim()
     if (filterProjectId.value) {
       params.projectId = filterProjectId.value
@@ -237,10 +284,11 @@ const openDetail = (note) => {
   detailVisible.value = true
 }
 
-// Right-click opens edit dialog (other info: project/group)
-const openEditDialog = (note) => {
+const openEditDialog = ({ task: note }) => {
   editNoteRef.value = note
-  Object.assign(editForm, { title: note.title || '', projectId: note.projectId })
+  editForm.title = note.title || ''
+  editForm.description = note.description || ''
+  editForm.projectId = note.projectId
   editing.value = true
 }
 
@@ -322,6 +370,16 @@ onBeforeUnmount(() => {
 <style scoped>
 .notes-page { padding: 16px; height: 100%; display: flex; flex-direction: column; }
 .notes-scroll { flex: 1; overflow-y: auto; }
+.project-section { margin-bottom: 24px; }
+.project-section-header {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 12px;
+  padding-bottom: 8px; border-bottom: 1px solid #f0f0f0;
+}
+.project-section-name { font-size: 14px; font-weight: 600; color: #409EFF; }
+.project-section-count {
+  background: #ecf5ff; color: #409EFF; padding: 1px 8px;
+  border-radius: 10px; font-size: 12px; font-weight: 500;
+}
 .dialog-footer {
   display: flex;
   justify-content: space-between;
@@ -333,16 +391,4 @@ onBeforeUnmount(() => {
   gap: 8px;
   margin-left: auto;
 }
-.context-menu {
-  position: fixed; z-index: 2000; background: #fff;
-  border: 1px solid #e4e7ed; border-radius: 6px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-  padding: 4px 0; min-width: 140px;
-}
-.menu-item {
-  display: flex; align-items: center; gap: 6px;
-  padding: 6px 14px; font-size: 13px; cursor: pointer;
-  color: #606266;
-}
-.menu-item:hover { background: #f5f7fa; color: #409eff; }
 </style>

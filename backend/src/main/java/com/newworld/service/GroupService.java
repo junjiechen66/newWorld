@@ -1,5 +1,6 @@
 package com.newworld.service;
 
+import com.newworld.dto.SortItem;
 import com.newworld.entity.Group;
 import com.newworld.dto.TreeVO;
 
@@ -37,4 +38,9 @@ public interface GroupService {
      * 删除分组
      */
     void delete(Long id);
+
+    /**
+     * 批量更新排序
+     */
+    void updateSort(List<SortItem> items);
 }

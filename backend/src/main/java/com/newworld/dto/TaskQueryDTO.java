@@ -45,6 +45,9 @@ public class TaskQueryDTO {
     @Schema(description = "是否笔记")
     private Boolean isNote;
 
+    @Schema(description = "是否归档")
+    private Boolean archived;
+
     @Schema(description = "当前页码")
     private Long page = 1L;
 
@@ -129,6 +132,14 @@ public class TaskQueryDTO {
 
     public void setIsNote(Boolean isNote) {
         this.isNote = isNote;
+    }
+
+    public Boolean getArchived() {
+        return archived;
+    }
+
+    public void setArchived(Boolean archived) {
+        this.archived = archived;
     }
 
     public Long getPage() {

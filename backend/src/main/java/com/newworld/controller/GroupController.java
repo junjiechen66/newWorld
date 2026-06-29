@@ -2,6 +2,7 @@ package com.newworld.controller;
 
 import com.newworld.common.Result;
 import com.newworld.config.AuthInterceptor;
+import com.newworld.dto.SortItem;
 import com.newworld.dto.TreeVO;
 import com.newworld.entity.Group;
 import com.newworld.service.GroupService;
@@ -62,5 +63,12 @@ public class GroupController {
     public Result<Void> delete(@PathVariable Long id) {
         groupService.delete(id);
         return Result.success("删除成功");
+    }
+
+    @Operation(summary = "批量更新分组排序")
+    @PutMapping("/sort")
+    public Result<Void> sort(@RequestBody List<SortItem> items) {
+        groupService.updateSort(items);
+        return Result.success("排序更新成功");
     }
 }

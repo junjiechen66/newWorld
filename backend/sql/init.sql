@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS sys_user (
     password    VARCHAR(255) NOT NULL COMMENT '密码（加密存储）',
     nickname    VARCHAR(50) COMMENT '昵称',
     avatar      VARCHAR(500) COMMENT '头像',
+    last_login_time DATETIME COMMENT '最近登录时间',
     create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户表';
@@ -56,6 +57,7 @@ CREATE TABLE IF NOT EXISTS task (
     start_date      DATE COMMENT '开始日期',
     due_date        DATE COMMENT '截止日期',
     is_note         TINYINT(1) DEFAULT 0 COMMENT '是否为笔记',
+    archived        TINYINT(1) DEFAULT 0 COMMENT '是否归档',
     sort_order      INT DEFAULT 0 COMMENT '排序号',
     create_time     DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     update_time     DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',

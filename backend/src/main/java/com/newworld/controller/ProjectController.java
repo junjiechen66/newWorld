@@ -3,6 +3,7 @@ package com.newworld.controller;
 import com.newworld.common.Result;
 import com.newworld.common.annotation.RequirePermission;
 import com.newworld.config.AuthInterceptor;
+import com.newworld.dto.SortItem;
 import com.newworld.entity.Project;
 import com.newworld.service.ProjectService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -49,5 +50,12 @@ public class ProjectController {
     public Result<Void> delete(@PathVariable Long id) {
         projectService.delete(id);
         return Result.success("删除成功");
+    }
+
+    @Operation(summary = "批量更新项目排序")
+    @PutMapping("/sort")
+    public Result<Void> sort(@RequestBody List<SortItem> items) {
+        projectService.updateSort(items);
+        return Result.success("排序更新成功");
     }
 }

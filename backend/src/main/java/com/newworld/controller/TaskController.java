@@ -33,7 +33,7 @@ public class TaskController {
         Long userId = AuthInterceptor.getCurrentUserId();
         List<Task> list = shareService.queryTasksWithShare(
                 userId, query.getIsNote(), query.getProjectId(),
-                query.getStatus(), query.getPriority(), query.getKeyword());
+                query.getStatus(), query.getPriority(), query.getKeyword(), query.getArchived());
         return Result.success(list);
     }
 
@@ -94,6 +94,20 @@ public class TaskController {
     @RequirePermission(resourceType = "TASK", level = "EDIT")
     public Result<Task> archive(@PathVariable Long id) {
         return Result.success("归档成功", taskService.archive(id));
+    }
+
+    @Operation(summary = "归档笔记")
+    @PutMapping("/{id}/note-archive")
+    @RequirePermission(resourceType = "TASK", level = "EDIT")
+    public Result<Task> noteArchive(@PathVariable Long id) {
+        return Result.success("归档成功", taskService.noteArchive(id));
+    }
+
+    @Operation(summary = "取消归档笔记")
+    @PutMapping("/{id}/note-unarchive")
+    @RequirePermission(resourceType = "TASK", level = "EDIT")
+    public Result<Task> noteUnarchive(@PathVariable Long id) {
+        return Result.success("取消归档成功", taskService.noteUnarchive(id));
     }
 
     @Operation(summary = "转换为笔记")

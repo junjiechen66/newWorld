@@ -28,6 +28,9 @@ public class User {
     @Schema(description = "头像")
     private String avatar;
 
+    @Schema(description = "最近登录时间")
+    private LocalDateTime lastLoginTime;
+
     @TableField(fill = FieldFill.INSERT)
     @Schema(description = "创建时间")
     private LocalDateTime createTime;
@@ -74,6 +77,14 @@ public class User {
 
     public void setAvatar(String avatar) {
         this.avatar = avatar;
+    }
+
+    public LocalDateTime getLastLoginTime() {
+        return lastLoginTime;
+    }
+
+    public void setLastLoginTime(LocalDateTime lastLoginTime) {
+        this.lastLoginTime = lastLoginTime;
     }
 
     public LocalDateTime getCreateTime() {

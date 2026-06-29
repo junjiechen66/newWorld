@@ -141,6 +141,28 @@ public class TaskServiceImpl implements TaskService {
     }
 
     @Override
+    public Task noteArchive(Long id) {
+        Task task = taskMapper.selectById(id);
+        if (task == null) {
+            throw new BusinessException("笔记不存在");
+        }
+        task.setArchived(true);
+        taskMapper.updateById(task);
+        return task;
+    }
+
+    @Override
+    public Task noteUnarchive(Long id) {
+        Task task = taskMapper.selectById(id);
+        if (task == null) {
+            throw new BusinessException("笔记不存在");
+        }
+        task.setArchived(false);
+        taskMapper.updateById(task);
+        return task;
+    }
+
+    @Override
     public Task convertToNote(Long id) {
         Task task = taskMapper.selectById(id);
         if (task == null) {
